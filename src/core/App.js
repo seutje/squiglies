@@ -3,6 +3,7 @@ import { CameraController } from "../render/CameraController.js";
 import { PhysicsWorld } from "../physics/PhysicsWorld.js";
 import { TrackRegistry } from "../audio/TrackRegistry.js";
 import { AudioManager } from "../audio/AudioManager.js";
+import { AudioFeatureExtractor } from "../audio/AudioFeatureExtractor.js";
 import { TransportControls } from "../ui/TransportControls.js";
 
 export class App {
@@ -21,8 +22,11 @@ export class App {
     this.physicsWorld = null;
     this.trackRegistry = null;
     this.audioManager = null;
+    this.audioFeatureExtractor = null;
     this.transportControls = null;
     this._isInitialized = false;
+    this._featureSubscribers = new Set();
+    this._latestFeatureFrame = null;
   }
 
   async init() {
@@ -83,6 +87,7 @@ export class App {
     this.lastTimestamp = timestamp;
 
     this.physicsWorld?.step(deltaSeconds);
+    this._updateAudioFeatures();
     this.sceneManager?.update(deltaSeconds);
     this.cameraController?.update(deltaSeconds);
     this.sceneManager?.render(this.cameraController?.camera);
@@ -111,6 +116,7 @@ export class App {
 
     try {
       await this.audioManager.initDefaultTrack();
+      await this._initAudioFeaturePipeline();
     } catch (error) {
       console.warn("Failed to load default track", error);
     }
@@ -130,5 +136,50 @@ export class App {
     while (this.visualizerContainer.firstChild) {
       this.visualizerContainer.removeChild(this.visualizerContainer.firstChild);
     }
+  }
+
+  onAudioFeatureFrame(listener) {
+    if (typeof listener !== "function") {
+      throw new Error("Feature frame listener must be a function");
+    }
+    this._featureSubscribers.add(listener);
+    return () => this._featureSubscribers.delete(listener);
+  }
+
+  getLatestAudioFeatureFrame() {
+    return this._latestFeatureFrame;
+  }
+
+  async _initAudioFeaturePipeline() {
+    if (!this.audioManager) return;
+    try {
+      const audioContext = await this.audioManager.getAudioContext();
+      this.audioFeatureExtractor = new AudioFeatureExtractor({
+        audioContext,
+        featureSmoothing: 0.6
+      });
+      this.audioManager.setFeatureExtractor(this.audioFeatureExtractor);
+    } catch (error) {
+      console.warn("Audio feature extractor unavailable", error);
+    }
+  }
+
+  _updateAudioFeatures() {
+    if (!this.audioFeatureExtractor) return;
+    const frame = this.audioFeatureExtractor.update();
+    if (!frame) return;
+    this._latestFeatureFrame = frame;
+    this._notifyFeatureSubscribers(frame);
+  }
+
+  _notifyFeatureSubscribers(frame) {
+    if (!this._featureSubscribers.size) return;
+    this._featureSubscribers.forEach((listener) => {
+      try {
+        listener(frame);
+      } catch (error) {
+        console.warn("Feature subscriber error", error);
+      }
+    });
   }
 }

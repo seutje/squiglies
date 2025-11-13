@@ -22,10 +22,10 @@ This plan is scoped for AI agents. Update checkboxes as work lands. Default assu
 - [x] Add fail-soft handling for autoplay restrictions and surface UI messages when unlocking audio context is required.
 
 ## Phase 3 – Audio Feature Extraction
-- [ ] Implement `audio/AudioFeatureExtractor.js` that computes RMS, band energies (sub→high), spectral centroid, and rolloff each frame.
-- [ ] Create smoothing/utility helpers per `DESIGN.md` (math.js) and unit-test them.
-- [ ] Expose feature frames via an event emitter or shared state the physics rig can consume.
-- [ ] Add Jest tests covering basic feature calculations (mocked analyser data).
+- [x] Implement `audio/AudioFeatureExtractor.js` that computes RMS, band energies (sub→high), spectral centroid, and rolloff each frame.
+- [x] Create smoothing/utility helpers per `DESIGN.md` (math.js) and unit-test them.
+- [x] Expose feature frames via an event emitter or shared state the physics rig can consume.
+- [x] Add Jest tests covering basic feature calculations (mocked analyser data).
 
 ## Phase 4 – Rig & Physics Integration
 - [ ] Implement `physics/AudioDrivenRig.js` that instantiates the articulated body/joint structure described in `DESIGN.md`.

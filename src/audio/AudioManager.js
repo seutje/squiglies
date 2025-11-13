@@ -16,6 +16,8 @@ export class AudioManager extends EventTarget {
     this.audioContext = null;
     this.gainNode = null;
     this.sourceNode = null;
+    this.featureExtractor = null;
+    this._analysisConnected = false;
 
     this.currentTrack = null;
     this.currentBuffer = null;
@@ -28,6 +30,15 @@ export class AudioManager extends EventTarget {
     this._timeUpdateInterval = null;
     this._contextUnlocked = false;
     this._needsUserUnlock = false;
+  }
+
+  async getAudioContext() {
+    return this._ensureAudioContext();
+  }
+
+  setFeatureExtractor(extractor) {
+    this.featureExtractor = extractor ?? null;
+    this._analysisConnected = false;
   }
 
   needsUserUnlock() {
@@ -199,7 +210,7 @@ export class AudioManager extends EventTarget {
 
     const source = ctx.createBufferSource();
     source.buffer = this.currentBuffer;
-    source.connect(this._getGainNode());
+    this._connectSourceToOutput(source);
     source.onended = () => this._handlePlaybackEnded();
     this.sourceNode = source;
   }
@@ -331,6 +342,22 @@ export class AudioManager extends EventTarget {
       this.gainNode.connect(ctx.destination);
     }
     return this.gainNode;
+  }
+
+  _connectSourceToOutput(sourceNode) {
+    const destination = this._getGainNode();
+    const analysisNode = this.featureExtractor?.getAnalyserNode();
+
+    if (!analysisNode) {
+      sourceNode.connect(destination);
+      return;
+    }
+
+    sourceNode.connect(analysisNode);
+    if (!this._analysisConnected) {
+      analysisNode.connect(destination);
+      this._analysisConnected = true;
+    }
   }
 
   async _resumeContext() {
