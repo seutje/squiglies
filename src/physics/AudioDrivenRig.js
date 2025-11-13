@@ -25,6 +25,10 @@ export class AudioDrivenRig {
 
     this._currentPreset = BASELINE_RIG_PRESET;
     this._meshGroup = new THREE.Group();
+
+    this._maxImpulse = 6;
+    this._maxTorque = 10;
+    this._maxTargetAngle = Math.PI * 0.65;
   }
 
   init() {
@@ -60,6 +64,7 @@ export class AudioDrivenRig {
       if (!this._isMappingSupported(mapping)) return;
 
       const featureValue = this._resolveFeatureValue(featureFrame, mapping.feature);
+      if (!Number.isFinite(featureValue)) return;
       const drivenValue = this._computeDriveValue(featureValue, mapping);
       if (!Number.isFinite(drivenValue)) return;
 
@@ -284,6 +289,9 @@ export class AudioDrivenRig {
   }
 
   _computeDriveValue(value, mapping) {
+    if (!Number.isFinite(value)) {
+      return 0;
+    }
     const scaled = (mapping.scale ?? 1) * value + (mapping.offset ?? 0);
     const min = Number.isFinite(mapping.min) ? mapping.min : -1;
     const max = Number.isFinite(mapping.max) ? mapping.max : 1;
@@ -300,8 +308,14 @@ export class AudioDrivenRig {
   _applyImpulse(bodyName, axis, magnitude) {
     const body = this._getBody(bodyName);
     if (!body) return;
+    if (!Number.isFinite(magnitude)) return;
     const direction = this._normalizeAxis(axis);
-    const impulse = new this.RAPIER.Vector3(direction[0] * magnitude, direction[1] * magnitude, direction[2] * magnitude);
+    const clampedMagnitude = clamp(magnitude, -this._maxImpulse, this._maxImpulse);
+    const impulse = new this.RAPIER.Vector3(
+      direction[0] * clampedMagnitude,
+      direction[1] * clampedMagnitude,
+      direction[2] * clampedMagnitude
+    );
     body.applyImpulse(impulse, true);
   }
 
@@ -317,7 +331,8 @@ export class AudioDrivenRig {
       ? mapping.targetAngles[0] + (mapping.targetAngles[1] - mapping.targetAngles[0]) * clamp(normalized, 0, 1)
       : controlValue;
 
-    const torqueMagnitude = targetAngle * (mapping.weight ?? 1);
+    const limitedAngle = clamp(targetAngle, -this._maxTargetAngle, this._maxTargetAngle);
+    const torqueMagnitude = clamp(limitedAngle * (mapping.weight ?? 1), -this._maxTorque, this._maxTorque);
     const torque = new this.RAPIER.Vector3(
       direction[0] * torqueMagnitude,
       direction[1] * torqueMagnitude,
@@ -329,11 +344,13 @@ export class AudioDrivenRig {
     if (mapping.damping) {
       const angVel = body.angvel();
       const projectedVel = angVel.x * direction[0] + angVel.y * direction[1] + angVel.z * direction[2];
-      const dampingTorque = -projectedVel * mapping.damping * (deltaSeconds ? Math.max(1, deltaSeconds * 60) : 1);
+      const dampingTorque =
+        -projectedVel * mapping.damping * (deltaSeconds ? Math.max(1, deltaSeconds * 60) : 1);
+      const limitedDamping = clamp(dampingTorque, -this._maxTorque, this._maxTorque);
       const dampingVector = new this.RAPIER.Vector3(
-        direction[0] * dampingTorque,
-        direction[1] * dampingTorque,
-        direction[2] * dampingTorque
+        direction[0] * limitedDamping,
+        direction[1] * limitedDamping,
+        direction[2] * limitedDamping
       );
       body.applyTorqueImpulse(dampingVector, true);
     }
@@ -370,6 +387,10 @@ export class AudioDrivenRig {
     if (!mapping) return false;
     if (!mapping.bodyName) return false;
     if (!mapping.mode || !JOINT_MAPPING_SCHEMA.mode.includes(mapping.mode)) {
+      return false;
+    }
+    const axis = this._normalizeAxis(mapping.axis);
+    if (!Number.isFinite(axis[0]) || !Number.isFinite(axis[1]) || !Number.isFinite(axis[2])) {
       return false;
     }
     return true;

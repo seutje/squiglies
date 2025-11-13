@@ -379,6 +379,9 @@ export const BASELINE_RIG_PRESET = {
 export function normalizeMappingConfig(mapping) {
   if (!mapping) return null;
   const safe = { ...mapping };
+  if (safe.feature) {
+    safe.feature = { ...safe.feature };
+  }
   if (!safe.axis || safe.axis.length !== 3) {
     safe.axis = [0, 1, 0];
   }

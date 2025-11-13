@@ -29,3 +29,4 @@
 - Updated the App + PhysicsWorld loop so feature frames drive the rig before stepping physics, visuals stay synced, and PLAN.md reflects the completed phase.
 2025-11-13 - Rig joint compatibility hotfix
 - Swapped the spherical joint creation over to Rapier’s `JointData.spherical` API (with a `ball` fallback) so the browser build on `0.11.2` initializes cleanly instead of throwing at startup.
+- Added guardrails for Rapier step stability: clamped impulse/torque magnitudes, cloned mapping configs defensively, and wrapped the physics step/event queue draining so runaway forces no longer crash the wasm pipeline.

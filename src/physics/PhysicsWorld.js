@@ -27,7 +27,18 @@ export class PhysicsWorld {
 
     while (this._accumulator >= this.fixedTimeStep) {
       this.world.timestep = this.fixedTimeStep;
-      this.world.step(this.eventQueue);
+      try {
+        if (this.eventQueue) {
+          this.world.step(this.eventQueue);
+          this._drainEventQueue();
+        } else {
+          this.world.step();
+        }
+      } catch (error) {
+        console.error("PhysicsWorld: step failed", error);
+        this._accumulator = 0;
+        break;
+      }
       this._accumulator -= this.fixedTimeStep;
     }
 
@@ -52,7 +63,18 @@ export class PhysicsWorld {
 
   _createWorld() {
     this.world = new this.RAPIER.World({ x: 0, y: -9.81, z: 0 });
-    this.eventQueue = new this.RAPIER.EventQueue(true);
+    this.eventQueue =
+      typeof this.RAPIER.EventQueue === "function" ? new this.RAPIER.EventQueue(true) : null;
+  }
+
+  _drainEventQueue() {
+    if (!this.eventQueue) return;
+    if (typeof this.eventQueue.drainContactEvents === "function") {
+      this.eventQueue.drainContactEvents(() => {});
+    }
+    if (typeof this.eventQueue.drainIntersectionEvents === "function") {
+      this.eventQueue.drainIntersectionEvents(() => {});
+    }
   }
 
   _createGround() {
