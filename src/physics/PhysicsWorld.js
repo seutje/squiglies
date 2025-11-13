@@ -98,4 +98,25 @@ export class PhysicsWorld {
 
     this._groundMesh = mesh;
   }
+
+  setGravity(vector) {
+    if (!this.world) return;
+    const target = Array.isArray(vector) && vector.length === 3 ? vector : [0, -9.81, 0];
+    const [x, y, z] = target.map((value, index) => {
+      if (!Number.isFinite(value)) {
+        return index === 1 ? -9.81 : 0;
+      }
+      return value;
+    });
+    if ("gravity" in this.world) {
+      this.world.gravity = { x, y, z };
+      return;
+    }
+    if (typeof this.world.raw === "function") {
+      const rawWorld = this.world.raw();
+      if (rawWorld?.rawSetGravity) {
+        rawWorld.rawSetGravity({ x, y, z });
+      }
+    }
+  }
 }

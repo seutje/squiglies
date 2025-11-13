@@ -102,22 +102,34 @@ export class AudioManager extends EventTarget {
 
     try {
       const buffer = await this._fetchTrackBuffer(nextTrack);
-      this.currentTrack = nextTrack;
-      this.currentBuffer = buffer;
-      this.pauseOffset = 0;
-      this.playbackStartTime = 0;
-      this._setState(AudioState.READY);
-      this.dispatchEvent(
-        new CustomEvent("trackchange", {
-          detail: { track: nextTrack }
-        })
-      );
-      this._emitMessage("");
-      this._emitTimeUpdate();
-      return nextTrack;
+      return this._finalizeBufferLoad(nextTrack, buffer);
     } catch (error) {
       this._setState(AudioState.ERROR);
       this._emitError("Failed to load track", error);
+      throw error;
+    }
+  }
+
+  async loadUserFile(file) {
+    if (!file || typeof file.arrayBuffer !== "function") {
+      throw new Error("AudioManager.loadUserFile expects a File or Blob with arrayBuffer()");
+    }
+
+    this._teardownSource(true);
+    this.currentBuffer = null;
+    this.currentTrack = null;
+    this._setState(AudioState.LOADING);
+    this._emitMessage("Decoding audio file...");
+
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const ctx = await this._ensureAudioContext();
+      const buffer = await ctx.decodeAudioData(arrayBuffer);
+      const userTrack = this._buildUserTrackMetadata(file);
+      return this._finalizeBufferLoad(userTrack, buffer);
+    } catch (error) {
+      this._setState(AudioState.ERROR);
+      this._emitError("Failed to load audio file", error);
       throw error;
     }
   }
@@ -389,6 +401,35 @@ export class AudioManager extends EventTarget {
   _markContextUnlocked() {
     if (this._contextUnlocked) return;
     this._contextUnlocked = true;
+  }
+
+  _finalizeBufferLoad(track, buffer) {
+    this.currentTrack = track;
+    this.currentBuffer = buffer;
+    this.pauseOffset = 0;
+    this.playbackStartTime = 0;
+    this._setState(AudioState.READY);
+    this.dispatchEvent(
+      new CustomEvent("trackchange", {
+        detail: { track }
+      })
+    );
+    this._emitMessage("");
+    this._emitTimeUpdate();
+    return track;
+  }
+
+  _buildUserTrackMetadata(file) {
+    const baseName =
+      typeof file?.name === "string" ? file.name.replace(/\.[^/.]+$/, "") : "Local Track";
+    const safeTitle = baseName?.trim() ? baseName.trim() : "Local Track";
+    return {
+      id: `user-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`,
+      title: safeTitle,
+      artist: "User File",
+      filename: file?.name ?? "local-audio",
+      isUserTrack: true
+    };
   }
 }
 

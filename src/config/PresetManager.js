@@ -67,6 +67,23 @@ export class PresetManager extends EventTarget {
     return this.presets.get(presetId) ?? null;
   }
 
+  listPresetSummaries({ trackId = null } = {}) {
+    const presets = Array.from(this.presets.values());
+    return presets
+      .filter((preset) => {
+        if (trackId === null || trackId === undefined) {
+          return true;
+        }
+        return (preset.trackId ?? null) === trackId;
+      })
+      .map((preset) => ({
+        id: preset.id,
+        name: preset.name,
+        trackId: preset.trackId ?? null,
+        description: preset.description ?? ""
+      }));
+  }
+
   getActiveTrackId() {
     return this.activeTrackId;
   }

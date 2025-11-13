@@ -8,6 +8,7 @@ import { AudioFeatureExtractor } from "../audio/AudioFeatureExtractor.js";
 import { TransportControls } from "../ui/TransportControls.js";
 import { PresetManager } from "../config/PresetManager.js";
 import { PresetControls } from "../ui/PresetControls.js";
+import { UIController } from "../ui/UIController.js";
 
 export class App {
   constructor({ visualizerContainer, controlsRoot }) {
@@ -30,6 +31,7 @@ export class App {
     this.transportControls = null;
     this.presetManager = null;
     this.presetControls = null;
+    this.uiController = null;
     this._isInitialized = false;
     this._featureSubscribers = new Set();
     this._latestFeatureFrame = null;
@@ -121,6 +123,10 @@ export class App {
   async _initAudioLayer() {
     this.trackRegistry = new TrackRegistry();
     this.presetManager = new PresetManager();
+    this.presetManager.addEventListener("presetchange", (event) => {
+      this._applyPresetToSystems(event.detail?.preset);
+    });
+    this._applyPresetToSystems(this.presetManager.getCurrentPreset());
     try {
       await this.presetManager.loadPresetsForTrackList(this.trackRegistry.listTracks());
     } catch (error) {
@@ -146,6 +152,15 @@ export class App {
       presetManager: this.presetManager
     });
     this.presetControls.init();
+
+    const trackRoot = this._resolveTrackRoot();
+    this.uiController = new UIController({
+      rootElement: trackRoot,
+      audioManager: this.audioManager,
+      presetManager: this.presetManager,
+      trackRegistry: this.trackRegistry
+    });
+    this.uiController.init();
 
     try {
       const defaultTrack = await this.audioManager.initDefaultTrack();
@@ -174,6 +189,17 @@ export class App {
     const target = this.controlsRoot.querySelector("[data-ui='presets']");
     if (!target) {
       throw new Error("Preset controls root not found");
+    }
+    return target;
+  }
+
+  _resolveTrackRoot() {
+    if (!this.controlsRoot) {
+      throw new Error("Controls root not found");
+    }
+    const target = this.controlsRoot.querySelector("[data-ui='tracks']");
+    if (!target) {
+      throw new Error("Track controls root not found");
     }
     return target;
   }
@@ -236,6 +262,19 @@ export class App {
     const trackId = typeof track === "string" ? track : track?.id ?? null;
     if (this.presetManager) {
       this.presetManager.setActiveTrack(trackId);
+    }
+  }
+
+  _applyPresetToSystems(preset) {
+    if (!preset) return;
+    const physics = preset.physics ?? {};
+    if (Array.isArray(physics.gravity)) {
+      this.physicsWorld?.setGravity(physics.gravity);
+    }
+    this.audioDrivenRig?.applyPhysicsTuning(physics);
+    const backgroundColor = preset.rendering?.backgroundColor;
+    if (backgroundColor) {
+      this.sceneManager?.setBackgroundColor(backgroundColor);
     }
   }
 }

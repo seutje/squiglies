@@ -22,6 +22,7 @@ export class AudioDrivenRig {
     this.meshesByHandle = new Map();
     this.initialStates = new Map();
     this.smoothingState = new Map();
+    this._bodyConfigs = new Map();
 
     this._currentPreset = BASELINE_RIG_PRESET;
     this._meshGroup = new THREE.Group();
@@ -29,6 +30,8 @@ export class AudioDrivenRig {
     this._maxImpulse = 6;
     this._maxTorque = 10;
     this._maxTargetAngle = Math.PI * 0.65;
+    this.driveIntensity = 1;
+    this.dampingMultiplier = 1;
   }
 
   init() {
@@ -104,6 +107,7 @@ export class AudioDrivenRig {
       body.setAngvel(new this.RAPIER.Vector3(0, 0, 0), true);
     });
     this.smoothingState.clear();
+    this._applyBodyDamping();
   }
 
   dispose() {
@@ -119,10 +123,31 @@ export class AudioDrivenRig {
     this.jointsByName.clear();
     this.initialStates.clear();
     this.smoothingState.clear();
+    this._bodyConfigs.clear();
     if (this._meshGroup.parent) {
       this._meshGroup.parent.remove(this._meshGroup);
     }
     this._meshGroup.clear();
+  }
+
+  applyPhysicsTuning(physics = {}) {
+    if (Number.isFinite(physics.stiffness)) {
+      this.setDriveIntensity(physics.stiffness);
+    }
+    if (Number.isFinite(physics.damping)) {
+      this.setDampingMultiplier(physics.damping);
+    }
+  }
+
+  setDriveIntensity(value = 1) {
+    if (!Number.isFinite(value)) return;
+    this.driveIntensity = clamp(value, 0.1, 3);
+  }
+
+  setDampingMultiplier(value = 1) {
+    if (!Number.isFinite(value)) return;
+    this.dampingMultiplier = clamp(value, 0.1, 3);
+    this._applyBodyDamping();
   }
 
   _buildBodies() {
@@ -133,10 +158,15 @@ export class AudioDrivenRig {
         translation: bodyDef.translation.slice(),
         rotation: this._getInitialRotation(bodyDef)
       });
+       this._bodyConfigs.set(bodyDef.name, {
+         linearDamping: bodyDef.linearDamping ?? 0.5,
+         angularDamping: bodyDef.angularDamping ?? 0.5
+       });
       const mesh = this._createMesh(bodyDef);
       this.meshesByHandle.set(body.handle, mesh);
       this._meshGroup.add(mesh);
     });
+    this._applyBodyDamping();
   }
 
   _buildJoints() {
@@ -310,7 +340,8 @@ export class AudioDrivenRig {
     if (!body) return;
     if (!Number.isFinite(magnitude)) return;
     const direction = this._normalizeAxis(axis);
-    const clampedMagnitude = clamp(magnitude, -this._maxImpulse, this._maxImpulse);
+    const impulseLimit = this._maxImpulse * this.driveIntensity;
+    const clampedMagnitude = clamp(magnitude, -impulseLimit, impulseLimit);
     const impulse = new this.RAPIER.Vector3(
       direction[0] * clampedMagnitude,
       direction[1] * clampedMagnitude,
@@ -332,7 +363,8 @@ export class AudioDrivenRig {
       : controlValue;
 
     const limitedAngle = clamp(targetAngle, -this._maxTargetAngle, this._maxTargetAngle);
-    const torqueMagnitude = clamp(limitedAngle * (mapping.weight ?? 1), -this._maxTorque, this._maxTorque);
+    const torqueLimit = this._maxTorque * this.driveIntensity;
+    const torqueMagnitude = clamp(limitedAngle * (mapping.weight ?? 1), -torqueLimit, torqueLimit);
     const torque = new this.RAPIER.Vector3(
       direction[0] * torqueMagnitude,
       direction[1] * torqueMagnitude,
@@ -394,5 +426,18 @@ export class AudioDrivenRig {
       return false;
     }
     return true;
+  }
+
+  _applyBodyDamping() {
+    if (!this.world || !this._bodyConfigs.size) return;
+    this.bodiesByName.forEach((handle, name) => {
+      const body = this.world.getRigidBody(handle);
+      if (!body) return;
+      const config = this._bodyConfigs.get(name) ?? {};
+      const linearDamping = (config.linearDamping ?? 0.5) * this.dampingMultiplier;
+      const angularDamping = (config.angularDamping ?? 0.5) * this.dampingMultiplier;
+      body.setLinearDamping(linearDamping);
+      body.setAngularDamping(angularDamping);
+    });
   }
 }

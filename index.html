@@ -255,6 +255,116 @@
         color: #facc15;
       }
 
+      .track-controls {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        font-size: 0.9rem;
+      }
+
+      .control-label {
+        display: block;
+        margin-bottom: 0.25rem;
+        font-size: 0.78rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: rgba(248, 250, 252, 0.7);
+      }
+
+      .track-select,
+      .preset-select {
+        width: 100%;
+        border-radius: 0.4rem;
+        border: 1px solid rgba(226, 232, 240, 0.2);
+        background: rgba(15, 23, 42, 0.4);
+        color: #f8fafc;
+        padding: 0.45rem 0.5rem;
+        font-size: 0.9rem;
+        appearance: none;
+      }
+
+      .track-upload-label,
+      .color-control {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        border: 1px dashed rgba(226, 232, 240, 0.3);
+        border-radius: 0.4rem;
+        padding: 0.4rem 0.6rem;
+        font-size: 0.85rem;
+        color: rgba(248, 250, 252, 0.9);
+      }
+
+      .track-upload-input {
+        width: 0;
+        height: 0;
+        opacity: 0;
+        position: absolute;
+        pointer-events: none;
+      }
+
+      .color-control input[type="color"] {
+        width: 48px;
+        height: 32px;
+        border: none;
+        padding: 0;
+        background: transparent;
+        cursor: pointer;
+      }
+
+      .parameter-controls {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 0.75rem;
+      }
+
+      .parameter-control {
+        background: rgba(15, 23, 42, 0.35);
+        border: 1px solid rgba(148, 163, 184, 0.25);
+        border-radius: 0.5rem;
+        padding: 0.5rem;
+      }
+
+      .parameter-head {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: rgba(248, 250, 252, 0.7);
+        margin-bottom: 0.35rem;
+      }
+
+      .parameter-value {
+        font-size: 0.75rem;
+        color: rgba(248, 250, 252, 0.75);
+      }
+
+      .parameter-control input[type="range"] {
+        width: 100%;
+        accent-color: #a855f7;
+      }
+
+      .ui-status {
+        min-height: 1.25rem;
+        font-size: 0.82rem;
+        color: rgba(248, 250, 252, 0.75);
+      }
+
+      .ui-status[data-variant="success"] {
+        color: #22c55e;
+      }
+
+      .ui-status[data-variant="warning"] {
+        color: #facc15;
+      }
+
+      .ui-status[data-variant="error"] {
+        color: #f87171;
+      }
+
       .sr-only {
         position: absolute;
         width: 1px;
@@ -278,7 +388,7 @@
           </div>
           <div class="control-block">
             <div class="control-title">Tracks</div>
-            <p>Bundled list + upload.</p>
+            <div class="track-controls-root" data-ui="tracks"></div>
           </div>
           <div class="control-block">
             <div class="control-title">Presets</div>

@@ -34,3 +34,7 @@
 - Built `PresetManager` with track-aware loading, random generation, import/export, and download helpers, plus Jest coverage for the new config layer.
 - Integrated the manager into App so track changes swap presets automatically, exposed the data to `AudioDrivenRig`, and added the PresetControls UI (randomize/export/download/import) with JSON textarea + file flow.
 - Updated PLAN.md to close out Phase 5 engineering items and documented the new workflow in DEVLOG for the next agent.
+2025-11-13 - Phase 6 UI + user audio
+- Added `UIController` with bundled track selector, preset dropdown, parameter sliders, and status messaging wired into the new CSS/HTML block per the mockup.
+- Enabled local audio uploads plus preset-driven gravity/drive/damping tuning by extending AudioManager, PhysicsWorld, SceneManager, and AudioDrivenRig, then piped preset changes back into those systems via App.
+- Updated PLAN to close Phase 6 engineering items so the next agent can move straight into polish/perf work.

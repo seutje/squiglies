@@ -41,10 +41,10 @@ This plan is scoped for AI agents. Update checkboxes as work lands. Default assu
 - [ ] Human: curate per-track preset JSON once tooling stabilizes (optional creative task).
 
 ## Phase 6 – UI/UX Layer
-- [ ] Create `ui/UIController.js` (or equivalent) that renders track selector, preset selector, parameter controls, and messages.
-- [ ] Integrate lil-gui or custom controls for live tweaking of physics/audio parameters.
-- [ ] Add file input for user-provided audio; verify analysis + rig mapping works end-to-end.
-- [ ] Surface minimal status/error messaging in the UI per Section 14 of `DESIGN.md`.
+- [x] Create `ui/UIController.js` (or equivalent) that renders track selector, preset selector, parameter controls, and messages.
+- [x] Integrate lil-gui or custom controls for live tweaking of physics/audio parameters.
+- [x] Add file input for user-provided audio; verify analysis + rig mapping works end-to-end.
+- [x] Surface minimal status/error messaging in the UI per Section 14 of `DESIGN.md`.
 
 ## Phase 7 – Polish, Performance, and QA
 - [ ] Tune FFT size / update cadence to maintain 60 fps; add simple performance metrics logging.

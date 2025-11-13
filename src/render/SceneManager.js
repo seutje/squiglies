@@ -140,4 +140,14 @@ export class SceneManager {
 
     this.renderer.setSize(width, height, false);
   }
+
+  setBackgroundColor(color) {
+    if (!this.renderer) return;
+    try {
+      const targetColor = color ? new THREE.Color(color) : new THREE.Color(DEFAULT_CLEAR_COLOR);
+      this.renderer.setClearColor(targetColor, 1);
+    } catch (error) {
+      console.warn("SceneManager: Invalid background color", color, error);
+    }
+  }
 }
