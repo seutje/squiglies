@@ -10,10 +10,10 @@ This plan is scoped for AI agents. Update checkboxes as work lands. Default assu
 - [x] Human: drop actual MP3 assets into `audio/` once stubs are in place.
 
 ## Phase 1 – Rendering & Physics Shell
-- [ ] Implement `render/SceneManager.js` with Three.js scene, renderer, lighting, placeholder mesh.
-- [ ] Implement `render/CameraController.js` (OrbitControls) and expose resize handling.
-- [ ] Create `physics/PhysicsWorld.js` that initializes Rapier, steps simulation, and syncs debug primitives.
-- [ ] Ensure App ties render + physics loops together with a single RAF tick.
+- [x] Implement `render/SceneManager.js` with Three.js scene, renderer, lighting, placeholder mesh.
+- [x] Implement `render/CameraController.js` (OrbitControls) and expose resize handling.
+- [x] Create `physics/PhysicsWorld.js` that initializes Rapier, steps simulation, and syncs debug primitives.
+- [x] Ensure App ties render + physics loops together with a single RAF tick.
 
 ## Phase 2 – Audio Playback Core
 - [ ] Build `audio/TrackRegistry.js` to enumerate bundled tracks + metadata.
