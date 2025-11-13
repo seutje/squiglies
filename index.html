@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Physics Audio Visualizer</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background-color: #050505;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        align-items: stretch;
+        justify-content: center;
+        background: radial-gradient(circle at top, #0f1c2d, #060606 60%);
+        color: #f2f5ff;
+      }
+
+      #app {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+      }
+
+      #visualizer-container {
+        flex: 1 1 auto;
+        position: relative;
+        overflow: hidden;
+        background: rgba(17, 24, 39, 0.9);
+      }
+
+      #controls {
+        flex: 0 0 auto;
+        padding: 1rem;
+        background: rgba(5, 8, 15, 0.85);
+        border-top: 1px solid rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(8px);
+      }
+
+      .controls-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+      }
+
+      .control-block {
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 0.5rem;
+        padding: 0.75rem;
+        min-height: 64px;
+      }
+
+      .control-title {
+        font-size: 0.85rem;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: rgba(255, 255, 255, 0.6);
+        margin-bottom: 0.5rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <div id="visualizer-container"></div>
+      <div id="controls">
+        <div class="controls-grid">
+          <div class="control-block">
+            <div class="control-title">Transport</div>
+            <p>Play/pause, seek bar, time display.</p>
+          </div>
+          <div class="control-block">
+            <div class="control-title">Tracks</div>
+            <p>Bundled list + upload.</p>
+          </div>
+          <div class="control-block">
+            <div class="control-title">Presets</div>
+            <p>Per-track presets + randomizer.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="./src/main.js"></script>
+  </body>
+</html>

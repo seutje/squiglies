@@ -1,0 +1,27 @@
+{
+  "id": "track07-default",
+  "name": "Track 07 Placeholder",
+  "description": "Placeholder preset for bundled track 07. Replace once presets are authored.",
+  "trackId": "track07",
+  "physics": {
+    "gravity": [0, -9.81, 0],
+    "damping": 0.5,
+    "stiffness": 1.0
+  },
+  "rendering": {
+    "backgroundColor": "#050505",
+    "colorPalette": ["#0ea5e9", "#a855f7", "#f97316"]
+  },
+  "mappings": [
+    {
+      "jointName": "core",
+      "feature": { "type": "rms" },
+      "scale": 1.0,
+      "offset": 0,
+      "smoothing": 0.5,
+      "mode": "torque",
+      "min": -1,
+      "max": 1
+    }
+  ]
+}
