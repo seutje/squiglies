@@ -1,6 +1,9 @@
 import { SceneManager } from "../render/SceneManager.js";
 import { CameraController } from "../render/CameraController.js";
 import { PhysicsWorld } from "../physics/PhysicsWorld.js";
+import { TrackRegistry } from "../audio/TrackRegistry.js";
+import { AudioManager } from "../audio/AudioManager.js";
+import { TransportControls } from "../ui/TransportControls.js";
 
 export class App {
   constructor({ visualizerContainer, controlsRoot }) {
@@ -16,6 +19,9 @@ export class App {
     this.sceneManager = null;
     this.cameraController = null;
     this.physicsWorld = null;
+    this.trackRegistry = null;
+    this.audioManager = null;
+    this.transportControls = null;
     this._isInitialized = false;
   }
 
@@ -45,6 +51,7 @@ export class App {
     });
     await this.physicsWorld.init();
 
+    await this._initAudioLayer();
     this._setupResizeHandling();
     this._isInitialized = true;
   }
@@ -89,6 +96,33 @@ export class App {
       this.cameraController?.resize();
     };
     window.addEventListener("resize", this._resizeHandler);
+  }
+
+  async _initAudioLayer() {
+    this.trackRegistry = new TrackRegistry();
+    this.audioManager = new AudioManager({ trackRegistry: this.trackRegistry });
+
+    const transportRoot = this._resolveTransportRoot();
+    this.transportControls = new TransportControls({
+      rootElement: transportRoot,
+      audioManager: this.audioManager
+    });
+    this.transportControls.init();
+
+    try {
+      await this.audioManager.initDefaultTrack();
+    } catch (error) {
+      console.warn("Failed to load default track", error);
+    }
+  }
+
+  _resolveTransportRoot() {
+    if (!this.controlsRoot) {
+      throw new Error("Controls root not found");
+    }
+    const target =
+      this.controlsRoot.querySelector("[data-ui='transport']") ?? this.controlsRoot;
+    return target;
   }
 
   _clearVisualizerContainer() {

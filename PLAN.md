@@ -16,10 +16,10 @@ This plan is scoped for AI agents. Update checkboxes as work lands. Default assu
 - [x] Ensure App ties render + physics loops together with a single RAF tick.
 
 ## Phase 2 – Audio Playback Core
-- [ ] Build `audio/TrackRegistry.js` to enumerate bundled tracks + metadata.
-- [ ] Implement `audio/AudioManager.js` with Web Audio playback, play/pause, seek, and progress events.
-- [ ] Wire DOM transport controls (play/pause button, scrub bar, time display) to AudioManager.
-- [ ] Add fail-soft handling for autoplay restrictions and surface UI messages when unlocking audio context is required.
+- [x] Build `audio/TrackRegistry.js` to enumerate bundled tracks + metadata.
+- [x] Implement `audio/AudioManager.js` with Web Audio playback, play/pause, seek, and progress events.
+- [x] Wire DOM transport controls (play/pause button, scrub bar, time display) to AudioManager.
+- [x] Add fail-soft handling for autoplay restrictions and surface UI messages when unlocking audio context is required.
 
 ## Phase 3 – Audio Feature Extraction
 - [ ] Implement `audio/AudioFeatureExtractor.js` that computes RMS, band energies (sub→high), spectral centroid, and rolloff each frame.

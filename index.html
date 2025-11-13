@@ -68,6 +68,105 @@
         color: rgba(255, 255, 255, 0.6);
         margin-bottom: 0.5rem;
       }
+
+      .transport-controls {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+
+      .transport-head {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+      }
+
+      .transport-button {
+        border: none;
+        border-radius: 999px;
+        padding: 0.5rem 0.85rem;
+        background: rgba(99, 102, 241, 0.25);
+        color: #fff;
+        font-weight: 600;
+        letter-spacing: 0.03em;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        transition: background 120ms ease;
+      }
+
+      .transport-button:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+
+      .transport-button:not(:disabled):hover {
+        background: rgba(129, 140, 248, 0.35);
+      }
+
+      .transport-track-info {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+      }
+
+      .transport-track-title {
+        font-weight: 600;
+        font-size: 0.95rem;
+        color: #f8fafc;
+      }
+
+      .transport-time {
+        font-size: 0.85rem;
+        color: rgba(248, 250, 252, 0.7);
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+      }
+
+      .transport-seek {
+        width: 100%;
+        accent-color: #818cf8;
+      }
+
+      .transport-message {
+        min-height: 1.25rem;
+        font-size: 0.8rem;
+        color: rgba(248, 250, 252, 0.7);
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+      }
+
+      .transport-message[data-variant="error"] {
+        color: #f87171;
+      }
+
+      .transport-message[data-variant="warning"] {
+        color: #facc15;
+      }
+
+      .transport-unlock {
+        border: 1px solid rgba(248, 250, 252, 0.4);
+        border-radius: 0.35rem;
+        padding: 0.25rem 0.6rem;
+        background: transparent;
+        color: inherit;
+        cursor: pointer;
+      }
+
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        border: 0;
+      }
     </style>
   </head>
   <body>
@@ -77,7 +176,7 @@
         <div class="controls-grid">
           <div class="control-block">
             <div class="control-title">Transport</div>
-            <p>Play/pause, seek bar, time display.</p>
+            <div class="transport-controls-root" data-ui="transport"></div>
           </div>
           <div class="control-block">
             <div class="control-title">Tracks</div>
