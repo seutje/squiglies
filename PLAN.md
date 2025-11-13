@@ -7,7 +7,7 @@ This plan is scoped for AI agents. Update checkboxes as work lands. Default assu
 - [x] Stub `src/main.js` and `core/App.js` to boot a minimal RAF loop targeting the DOM containers described in `DESIGN.md`.
 - [x] Add placeholder bundled tracks list in `audio/` (filenames only) and preset JSON stubs that mirror the naming convention.
 - [x] Document npm scripts (if any) and how to serve locally (e.g., `npm install`, `npm run dev` or plain `http-server`).
-- [ ] Human: drop actual MP3 assets into `audio/` once stubs are in place.
+- [x] Human: drop actual MP3 assets into `audio/` once stubs are in place.
 
 ## Phase 1 – Rendering & Physics Shell
 - [ ] Implement `render/SceneManager.js` with Three.js scene, renderer, lighting, placeholder mesh.

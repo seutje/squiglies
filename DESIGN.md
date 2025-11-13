@@ -7,7 +7,7 @@ A browser-based audio visualizer that:
 
 - Runs entirely from a static HTML file + one ES module entrypoint (`main.js`).
 - Uses **Three.js** for rendering and **Rapier** for physics (via CDN).
-- Includes ~10 prepackaged album tracks (MP3 files in a local folder).
+- Includes 11 prepackaged album tracks (MP3 files in a local folder).
 - Allows the user to select those tracks **or** load their own local audio file.
 - Drives a physics-based rig/model (joints and bodies) from **audio features**.
 - Supports:
@@ -108,13 +108,21 @@ Proposed file tree:
 /
   index.html
   /audio/
-    track01.mp3
-    track02.mp3
-    ...
+    01 - Shiny City.mp3
+    02 - Shadowline.mp3
+    03 - Glass Feed.mp3
+    04 - Pressure Line.mp3
+    05 - Nobody's Brand.mp3
+    06 - Reload Reload.mp3
+    07 - Bit by Bit.mp3
+    08 - Like Water.mp3
+    09 - Grooving Out.mp3
+    10 - Built Different.mp3
+    11 - Cooking Up.mp3
   /presets/
     track01.json
-    track02.json
     ...
+    track11.json
   /src/
     main.js
     core/App.js
@@ -131,6 +139,26 @@ Proposed file tree:
     utils/math.js
     utils/download.js
 ```
+
+> **UI reference**: `mockup.png` in the repo root captures the approved transport + selector layout. Treat it as the visual contract when implementing Section 6 so control placement stays consistent.
+
+### Bundled Audio Catalog
+
+Track IDs stay `track01`–`track11`, but their filenames now reflect the supplied masters. TrackRegistry should expose at least `id`, `file`, `title`, and `defaultPresetId` for each entry.
+
+| Track ID | Filename                    | Display Name     |
+|----------|-----------------------------|------------------|
+| track01  | `audio/01 - Shiny City.mp3` | Shiny City       |
+| track02  | `audio/02 - Shadowline.mp3` | Shadowline       |
+| track03  | `audio/03 - Glass Feed.mp3` | Glass Feed       |
+| track04  | `audio/04 - Pressure Line.mp3` | Pressure Line  |
+| track05  | `audio/05 - Nobody's Brand.mp3` | Nobody's Brand |
+| track06  | `audio/06 - Reload Reload.mp3` | Reload Reload  |
+| track07  | `audio/07 - Bit by Bit.mp3` | Bit by Bit       |
+| track08  | `audio/08 - Like Water.mp3` | Like Water       |
+| track09  | `audio/09 - Grooving Out.mp3` | Grooving Out   |
+| track10  | `audio/10 - Built Different.mp3` | Built Different |
+| track11  | `audio/11 - Cooking Up.mp3` | Cooking Up       |
 
 High-level module responsibilities:
 
@@ -280,14 +308,14 @@ Example data structure:
 export const TRACKS = [
   {
     id: "track01",
-    name: "Intro",
-    file: "audio/track01.mp3",
+    title: "Shiny City",
+    file: "audio/01 - Shiny City.mp3",
     defaultPresetId: "track01-default"
   },
   {
     id: "track02",
-    name: "Main Theme",
-    file: "audio/track02.mp3",
+    title: "Shadowline",
+    file: "audio/02 - Shadowline.mp3",
     defaultPresetId: "track02-default"
   },
   // ...
@@ -606,6 +634,7 @@ Responsibilities:
 - Build and manage all HTML controls (either via:
   - direct DOM manipulation, or
   - simple creation in `index.html` + event binding).
+- Mirror the layout shown in `mockup.png` (transport at top, selectors + parameter column underneath) so the shipped UI matches the approved reference.
 - Emit events for:
   - Track selection.
   - User file selection.
