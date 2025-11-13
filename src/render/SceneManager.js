@@ -8,7 +8,6 @@ export class SceneManager {
     this.scene = new THREE.Scene();
     this.renderer = null;
 
-    this._placeholderMesh = null;
     this._resizeObserver = null;
     this._fallbackResizeHandler = null;
   }
@@ -20,7 +19,7 @@ export class SceneManager {
 
     this._setupRenderer();
     this._setupLights();
-    this._addPlaceholderMesh();
+    this._addGroundPlane();
     this._resize();
 
     if (typeof ResizeObserver !== "undefined") {
@@ -32,12 +31,7 @@ export class SceneManager {
     }
   }
 
-  update(deltaSeconds) {
-    if (!this._placeholderMesh) return;
-    const rotationSpeed = 0.6;
-    this._placeholderMesh.rotation.y += rotationSpeed * deltaSeconds;
-    this._placeholderMesh.rotation.x = Math.sin(performance.now() * 0.0005) * 0.2;
-  }
+  update() {}
 
   render(camera) {
     if (!this.renderer || !camera) return;
@@ -95,19 +89,7 @@ export class SceneManager {
     this.scene.add(rimLight);
   }
 
-  _addPlaceholderMesh() {
-    const geometry = new THREE.TorusKnotGeometry(1.2, 0.35, 160, 20);
-    const material = new THREE.MeshStandardMaterial({
-      color: 0x3ec8ff,
-      metalness: 0.3,
-      roughness: 0.4
-    });
-
-    this._placeholderMesh = new THREE.Mesh(geometry, material);
-    this._placeholderMesh.castShadow = true;
-    this._placeholderMesh.receiveShadow = true;
-    this.scene.add(this._placeholderMesh);
-
+  _addGroundPlane() {
     const groundGeometry = new THREE.CylinderGeometry(4, 4, 0.2, 64);
     const groundMaterial = new THREE.MeshStandardMaterial({
       color: 0x0f172a,

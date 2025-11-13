@@ -38,3 +38,7 @@
 - Added `UIController` with bundled track selector, preset dropdown, parameter sliders, and status messaging wired into the new CSS/HTML block per the mockup.
 - Enabled local audio uploads plus preset-driven gravity/drive/damping tuning by extending AudioManager, PhysicsWorld, SceneManager, and AudioDrivenRig, then piped preset changes back into those systems via App.
 - Updated PLAN to close Phase 6 engineering items so the next agent can move straight into polish/perf work.
+
+2025-11-14 - Scene cleanup
+- Removed the torus-knot placeholder mesh from `SceneManager` so the center of the scene stays clear for the physics rig.
+- Retained only the ground platform initialization so lighting/shadows still have a visual reference plane.
