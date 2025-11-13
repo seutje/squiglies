@@ -71,11 +71,19 @@ const AUDIO_BASE_PATH = "./audio";
 
 export class TrackRegistry {
   constructor(trackList = TRACK_LIST) {
-    this._tracks = trackList.map((track, index) => ({
-      ...track,
-      index,
-      src: this._buildSrc(track.filename)
-    }));
+    this._tracks = trackList.map((track, index) => {
+      const id = track.id ?? `track${String(index + 1).padStart(2, "0")}`;
+      const defaultPresetId = track.defaultPresetId ?? `${id}-default`;
+      const presetFile = track.presetFile ?? `${id}.json`;
+      return {
+        ...track,
+        id,
+        index,
+        src: this._buildSrc(track.filename),
+        defaultPresetId,
+        presetFile
+      };
+    });
   }
 
   listTracks() {

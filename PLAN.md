@@ -34,10 +34,10 @@ This plan is scoped for AI agents. Update checkboxes as work lands. Default assu
 - [x] Validate physics stability (cap bodies ≤ 50, handle reset when switching tracks).
 
 ## Phase 5 – Presets System
-- [ ] Build `config/PresetManager.js` with load/save/export/import APIs.
-- [ ] Autoload preset JSON matching each bundled track and fall back gracefully if missing.
-- [ ] Implement “Random” preset generator and expose hook in UI.
-- [ ] Provide JSON download (using `download.js`) and import-from-file/text flows.
+- [x] Build `config/PresetManager.js` with load/save/export/import APIs.
+- [x] Autoload preset JSON matching each bundled track and fall back gracefully if missing.
+- [x] Implement “Random” preset generator and expose hook in UI.
+- [x] Provide JSON download (using `download.js`) and import-from-file/text flows.
 - [ ] Human: curate per-track preset JSON once tooling stabilizes (optional creative task).
 
 ## Phase 6 – UI/UX Layer

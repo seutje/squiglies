@@ -30,3 +30,7 @@
 2025-11-13 - Rig joint compatibility hotfix
 - Swapped the spherical joint creation over to Rapier’s `JointData.spherical` API (with a `ball` fallback) so the browser build on `0.11.2` initializes cleanly instead of throwing at startup.
 - Added guardrails for Rapier step stability: clamped impulse/torque magnitudes, cloned mapping configs defensively, and wrapped the physics step/event queue draining so runaway forces no longer crash the wasm pipeline.
+2025-11-13 - Phase 5 presets tooling
+- Built `PresetManager` with track-aware loading, random generation, import/export, and download helpers, plus Jest coverage for the new config layer.
+- Integrated the manager into App so track changes swap presets automatically, exposed the data to `AudioDrivenRig`, and added the PresetControls UI (randomize/export/download/import) with JSON textarea + file flow.
+- Updated PLAN.md to close out Phase 5 engineering items and documented the new workflow in DEVLOG for the next agent.

@@ -6,6 +6,8 @@ import { TrackRegistry } from "../audio/TrackRegistry.js";
 import { AudioManager } from "../audio/AudioManager.js";
 import { AudioFeatureExtractor } from "../audio/AudioFeatureExtractor.js";
 import { TransportControls } from "../ui/TransportControls.js";
+import { PresetManager } from "../config/PresetManager.js";
+import { PresetControls } from "../ui/PresetControls.js";
 
 export class App {
   constructor({ visualizerContainer, controlsRoot }) {
@@ -26,6 +28,8 @@ export class App {
     this.audioManager = null;
     this.audioFeatureExtractor = null;
     this.transportControls = null;
+    this.presetManager = null;
+    this.presetControls = null;
     this._isInitialized = false;
     this._featureSubscribers = new Set();
     this._latestFeatureFrame = null;
@@ -95,7 +99,8 @@ export class App {
     this.lastTimestamp = timestamp;
 
     const featureFrame = this._updateAudioFeatures();
-    this.audioDrivenRig?.update(featureFrame, deltaSeconds);
+    const activePreset = this.presetManager?.getCurrentPreset() ?? null;
+    this.audioDrivenRig?.update(featureFrame, deltaSeconds, activePreset);
     this.physicsWorld?.step(deltaSeconds);
     this.audioDrivenRig?.syncVisuals();
     this.sceneManager?.update(deltaSeconds);
@@ -115,9 +120,17 @@ export class App {
 
   async _initAudioLayer() {
     this.trackRegistry = new TrackRegistry();
+    this.presetManager = new PresetManager();
+    try {
+      await this.presetManager.loadPresetsForTrackList(this.trackRegistry.listTracks());
+    } catch (error) {
+      console.warn("Failed to preload presets", error);
+    }
+
     this.audioManager = new AudioManager({ trackRegistry: this.trackRegistry });
-    this.audioManager.addEventListener("trackchange", () => {
-      this.audioDrivenRig?.resetPose();
+    this.audioManager.addEventListener("trackchange", (event) => {
+      const track = event.detail?.track ?? null;
+      this._handleTrackChanged(track);
     });
 
     const transportRoot = this._resolveTransportRoot();
@@ -127,8 +140,18 @@ export class App {
     });
     this.transportControls.init();
 
+    const presetRoot = this._resolvePresetRoot();
+    this.presetControls = new PresetControls({
+      rootElement: presetRoot,
+      presetManager: this.presetManager
+    });
+    this.presetControls.init();
+
     try {
-      await this.audioManager.initDefaultTrack();
+      const defaultTrack = await this.audioManager.initDefaultTrack();
+      if (defaultTrack?.id) {
+        this.presetManager?.setActiveTrack(defaultTrack.id);
+      }
       await this._initAudioFeaturePipeline();
     } catch (error) {
       console.warn("Failed to load default track", error);
@@ -141,6 +164,17 @@ export class App {
     }
     const target =
       this.controlsRoot.querySelector("[data-ui='transport']") ?? this.controlsRoot;
+    return target;
+  }
+
+  _resolvePresetRoot() {
+    if (!this.controlsRoot) {
+      throw new Error("Controls root not found");
+    }
+    const target = this.controlsRoot.querySelector("[data-ui='presets']");
+    if (!target) {
+      throw new Error("Preset controls root not found");
+    }
     return target;
   }
 
@@ -195,5 +229,13 @@ export class App {
         console.warn("Feature subscriber error", error);
       }
     });
+  }
+
+  _handleTrackChanged(track) {
+    this.audioDrivenRig?.resetPose();
+    const trackId = typeof track === "string" ? track : track?.id ?? null;
+    if (this.presetManager) {
+      this.presetManager.setActiveTrack(trackId);
+    }
   }
 }
