@@ -23,3 +23,7 @@
 2025-11-13 - Phase 3 audio features
 - Implemented the AudioFeatureExtractor with per-frame RMS/band/centroid/rolloff data plus a feature subscriber API on App so the physics rig can tap the latest frame.
 - Added math smoothing helpers with Jest coverage alongside analyser-focused tests to secure the new analysis stack, then marked Phase 3 complete in PLAN.md.
+2025-11-13 - Phase 4 rig integration
+- Added a rig definition/config schema that caps the body count, encodes joint driver metadata (weights/damping/target angles), and exposes a baseline preset for mapping audio features.
+- Built `AudioDrivenRig` to instantiate the articulated Rapier chain with matching Three.js meshes, apply feature-driven impulses/torques each frame, and reset the pose when tracks change.
+- Updated the App + PhysicsWorld loop so feature frames drive the rig before stepping physics, visuals stay synced, and PLAN.md reflects the completed phase.

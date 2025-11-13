@@ -12,14 +12,13 @@ export class PhysicsWorld {
     this.fixedTimeStep = 1 / 60;
     this._accumulator = 0;
 
-    this._debugMeshes = [];
+    this._groundMesh = null;
   }
 
   async init() {
     await this._loadRapier();
     this._createWorld();
     this._createGround();
-    this._createDebugStack();
   }
 
   step(deltaSeconds) {
@@ -32,18 +31,17 @@ export class PhysicsWorld {
       this._accumulator -= this.fixedTimeStep;
     }
 
-    this._syncDebugMeshes();
   }
 
   dispose() {
-    this._debugMeshes.forEach(({ mesh }) => {
-      if (mesh.parent) {
-        mesh.parent.remove(mesh);
+    if (this._groundMesh) {
+      if (this._groundMesh.parent) {
+        this._groundMesh.parent.remove(this._groundMesh);
       }
-      mesh.geometry.dispose();
-      mesh.material.dispose();
-    });
-    this._debugMeshes = [];
+      this._groundMesh.geometry.dispose();
+      this._groundMesh.material.dispose();
+      this._groundMesh = null;
+    }
     this.world = null;
   }
 
@@ -76,54 +74,6 @@ export class PhysicsWorld {
 
     this.scene.add(mesh);
 
-    this._debugMeshes.push({
-      mesh,
-      bodyHandle: body.handle
-    });
-  }
-
-  _createDebugStack() {
-    const boxGeometry = new THREE.BoxGeometry(0.6, 0.6, 0.6);
-    const colors = [0x3ec8ff, 0xff8a5b, 0x9b5cf5, 0x7dd3fc];
-
-    for (let i = 0; i < 3; i += 1) {
-      const rigidBodyDesc = this.RAPIER.RigidBodyDesc.dynamic().setTranslation(0, i * 0.8 + 0.5, 0);
-      rigidBodyDesc.setAngularDamping(0.8);
-
-      const body = this.world.createRigidBody(rigidBodyDesc);
-      const colliderDesc = this.RAPIER.ColliderDesc.cuboid(0.3, 0.3, 0.3).setRestitution(0.2);
-      this.world.createCollider(colliderDesc, body);
-
-      const material = new THREE.MeshStandardMaterial({
-        color: colors[i % colors.length],
-        metalness: 0.2,
-        roughness: 0.4
-      });
-      const mesh = new THREE.Mesh(boxGeometry.clone(), material);
-      mesh.castShadow = true;
-      mesh.receiveShadow = true;
-
-      this.scene.add(mesh);
-
-      this._debugMeshes.push({
-        mesh,
-        bodyHandle: body.handle
-      });
-    }
-  }
-
-  _syncDebugMeshes() {
-    if (!this.world || !this._debugMeshes.length) return;
-
-    this._debugMeshes.forEach(({ mesh, bodyHandle }) => {
-      const body = this.world.getRigidBody(bodyHandle);
-      if (!body) return;
-
-      const translation = body.translation();
-      mesh.position.set(translation.x, translation.y, translation.z);
-
-      const rotation = body.rotation();
-      mesh.quaternion.set(rotation.x, rotation.y, rotation.z, rotation.w);
-    });
+    this._groundMesh = mesh;
   }
 }

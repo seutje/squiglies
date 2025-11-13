@@ -28,10 +28,10 @@ This plan is scoped for AI agents. Update checkboxes as work lands. Default assu
 - [x] Add Jest tests covering basic feature calculations (mocked analyser data).
 
 ## Phase 4 – Rig & Physics Integration
-- [ ] Implement `physics/AudioDrivenRig.js` that instantiates the articulated body/joint structure described in `DESIGN.md`.
-- [ ] Map baseline audio features to rig parameters (e.g., bass → root body impulse) to prove loop works.
-- [ ] Add configuration schema for how presets drive joints (weights, damping, target angles).
-- [ ] Validate physics stability (cap bodies ≤ 50, handle reset when switching tracks).
+- [x] Implement `physics/AudioDrivenRig.js` that instantiates the articulated body/joint structure described in `DESIGN.md`.
+- [x] Map baseline audio features to rig parameters (e.g., bass → root body impulse) to prove loop works.
+- [x] Add configuration schema for how presets drive joints (weights, damping, target angles).
+- [x] Validate physics stability (cap bodies ≤ 50, handle reset when switching tracks).
 
 ## Phase 5 – Presets System
 - [ ] Build `config/PresetManager.js` with load/save/export/import APIs.

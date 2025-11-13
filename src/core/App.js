@@ -1,6 +1,7 @@
 import { SceneManager } from "../render/SceneManager.js";
 import { CameraController } from "../render/CameraController.js";
 import { PhysicsWorld } from "../physics/PhysicsWorld.js";
+import { AudioDrivenRig } from "../physics/AudioDrivenRig.js";
 import { TrackRegistry } from "../audio/TrackRegistry.js";
 import { AudioManager } from "../audio/AudioManager.js";
 import { AudioFeatureExtractor } from "../audio/AudioFeatureExtractor.js";
@@ -20,6 +21,7 @@ export class App {
     this.sceneManager = null;
     this.cameraController = null;
     this.physicsWorld = null;
+    this.audioDrivenRig = null;
     this.trackRegistry = null;
     this.audioManager = null;
     this.audioFeatureExtractor = null;
@@ -55,6 +57,12 @@ export class App {
     });
     await this.physicsWorld.init();
 
+    this.audioDrivenRig = new AudioDrivenRig({
+      physicsWorld: this.physicsWorld,
+      scene: this.sceneManager.scene
+    });
+    this.audioDrivenRig.init();
+
     await this._initAudioLayer();
     this._setupResizeHandling();
     this._isInitialized = true;
@@ -86,8 +94,10 @@ export class App {
     const deltaSeconds = (timestamp - this.lastTimestamp) / 1000;
     this.lastTimestamp = timestamp;
 
+    const featureFrame = this._updateAudioFeatures();
+    this.audioDrivenRig?.update(featureFrame, deltaSeconds);
     this.physicsWorld?.step(deltaSeconds);
-    this._updateAudioFeatures();
+    this.audioDrivenRig?.syncVisuals();
     this.sceneManager?.update(deltaSeconds);
     this.cameraController?.update(deltaSeconds);
     this.sceneManager?.render(this.cameraController?.camera);
@@ -106,6 +116,9 @@ export class App {
   async _initAudioLayer() {
     this.trackRegistry = new TrackRegistry();
     this.audioManager = new AudioManager({ trackRegistry: this.trackRegistry });
+    this.audioManager.addEventListener("trackchange", () => {
+      this.audioDrivenRig?.resetPose();
+    });
 
     const transportRoot = this._resolveTransportRoot();
     this.transportControls = new TransportControls({
@@ -165,11 +178,12 @@ export class App {
   }
 
   _updateAudioFeatures() {
-    if (!this.audioFeatureExtractor) return;
+    if (!this.audioFeatureExtractor) return null;
     const frame = this.audioFeatureExtractor.update();
-    if (!frame) return;
+    if (!frame) return null;
     this._latestFeatureFrame = frame;
     this._notifyFeatureSubscribers(frame);
+    return frame;
   }
 
   _notifyFeatureSubscribers(frame) {
