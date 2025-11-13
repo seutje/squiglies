@@ -18,3 +18,5 @@
 - Added Rapier to the project dependencies and wired it into the HTML import map so the browser resolves the module locally instead of failing at runtime.
 - Updated PhysicsWorld to load the module via the shared specifier, eliminating the 404 and ensuring the wasm asset stays colocated.
 - 2025-11-13: Removed the Rapier npm dependency and added a CDN loader so the physics module downloads in the browser just like Neuromorphs does, keeping local installs lean while preventing 404s.
+2025-11-13 - Viewport-clamped canvas
+- Limited the Three.js renderer and camera aspect calculation to the viewport bounds so the canvas never grows beyond the visible window.

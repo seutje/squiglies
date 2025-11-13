@@ -123,8 +123,20 @@ export class SceneManager {
   _resize() {
     if (!this.renderer) return;
 
-    const width = Math.max(1, this.container.clientWidth);
-    const height = Math.max(1, this.container.clientHeight);
+    const containerWidth = Math.max(1, this.container.clientWidth);
+    const containerHeight = Math.max(1, this.container.clientHeight);
+    const safeWindow = typeof window !== "undefined" ? window : null;
+    const safeDocument = typeof document !== "undefined" ? document : null;
+    const viewportWidth = Math.max(
+      1,
+      safeWindow?.innerWidth ?? safeDocument?.documentElement?.clientWidth ?? containerWidth
+    );
+    const viewportHeight = Math.max(
+      1,
+      safeWindow?.innerHeight ?? safeDocument?.documentElement?.clientHeight ?? containerHeight
+    );
+    const width = Math.min(containerWidth, viewportWidth);
+    const height = Math.min(containerHeight, viewportHeight);
 
     this.renderer.setSize(width, height, false);
   }
