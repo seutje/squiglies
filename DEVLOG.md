@@ -27,3 +27,5 @@
 - Added a rig definition/config schema that caps the body count, encodes joint driver metadata (weights/damping/target angles), and exposes a baseline preset for mapping audio features.
 - Built `AudioDrivenRig` to instantiate the articulated Rapier chain with matching Three.js meshes, apply feature-driven impulses/torques each frame, and reset the pose when tracks change.
 - Updated the App + PhysicsWorld loop so feature frames drive the rig before stepping physics, visuals stay synced, and PLAN.md reflects the completed phase.
+2025-11-13 - Rig joint compatibility hotfix
+- Swapped the spherical joint creation over to Rapier’s `JointData.spherical` API (with a `ball` fallback) so the browser build on `0.11.2` initializes cleanly instead of throwing at startup.

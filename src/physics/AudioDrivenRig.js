@@ -243,8 +243,16 @@ export class AudioDrivenRig {
         break;
       }
       case "spherical":
-      default:
-        jointData = this.RAPIER.JointData.ball(anchorA, anchorB);
+      default: {
+        const sphericalFactory =
+          this.RAPIER.JointData.spherical ?? this.RAPIER.JointData.ball ?? null;
+        if (!sphericalFactory) {
+          console.error("AudioDrivenRig: Rapier build missing JointData.spherical/ball");
+          return null;
+        }
+        jointData = sphericalFactory(anchorA, anchorB);
+        break;
+      }
     }
 
     return this.world.createImpulseJoint(jointData, bodyA, bodyB, true);
