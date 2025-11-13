@@ -1,7 +1,5 @@
-import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js";
-
-const RAPIER_MODULE_URL =
-  "https://cdn.jsdelivr.net/npm/@dimforge/rapier3d-compat@0.12.0/rapier3d-compat.es.js";
+import * as THREE from "three";
+import { loadRapier } from "./loadRapier.js";
 
 export class PhysicsWorld {
   constructor({ scene }) {
@@ -51,11 +49,7 @@ export class PhysicsWorld {
 
   async _loadRapier() {
     if (this.RAPIER) return;
-    const mod = await import(RAPIER_MODULE_URL);
-    this.RAPIER = mod.default ?? mod;
-    if (typeof this.RAPIER.init === "function") {
-      await this.RAPIER.init();
-    }
+    this.RAPIER = await loadRapier();
   }
 
   _createWorld() {

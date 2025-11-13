@@ -12,3 +12,9 @@
 2025-11-13 - Phase 2 audio core
 - Added TrackRegistry, AudioManager, and TransportControls to cover playback, seek, and DOM wiring with unlock messaging per the plan.
 - Updated the HTML/CSS shell plus PLAN to reflect the completed transport UX, and seeded Jest coverage for the registry metadata contract.
+2025-11-13 - Import map fix for CDN modules
+- Added an import map plus normalized Three.js imports so OrbitControls resolves without bare specifier errors in the browser.
+2025-11-13 - Rapier import stabilization
+- Added Rapier to the project dependencies and wired it into the HTML import map so the browser resolves the module locally instead of failing at runtime.
+- Updated PhysicsWorld to load the module via the shared specifier, eliminating the 404 and ensuring the wasm asset stays colocated.
+- 2025-11-13: Removed the Rapier npm dependency and added a CDN loader so the physics module downloads in the browser just like Neuromorphs does, keeping local installs lean while preventing 404s.
