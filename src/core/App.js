@@ -309,14 +309,6 @@ export class App {
     const result = this.performanceMonitor.record(deltaSeconds, timestamp);
     if (!result) return;
     const { didLog, metrics } = result;
-    if (didLog && metrics) {
-      console.table({
-        "avg fps": metrics.fps.toFixed(1),
-        "avg frame (ms)": metrics.frameMs.toFixed(2),
-        "min frame (ms)": metrics.minMs.toFixed(2),
-        "max frame (ms)": metrics.maxMs.toFixed(2)
-      });
-    }
     this._maybeAdjustFeatureDetail();
   }
 
