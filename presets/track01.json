@@ -1,7 +1,7 @@
 {
   "id": "trask01-default",
   "name": "Track 01 Rig Mapping",
-  "description": "Default mapping proving audio \u2192 physics loop",
+  "description": "Default mapping proving audio → physics loop",
   "mappings": [
     {
       "id": "core-pulse",
@@ -13,16 +13,16 @@
       ],
       "mode": "impulse",
       "feature": {
-        "type": "band",
-        "index": 0
+        "type": "energy",
+        "index": 5
       },
-      "scale": 1,
+      "scale": 1.05,
       "offset": 0,
-      "smoothing": 0.35,
+      "smoothing": 0,
       "min": 0,
       "max": 1,
-      "weight": 1.2,
-      "damping": 0.1
+      "weight": 9.8,
+      "damping": 1.25
     },
     {
       "id": "bass-sway",
@@ -36,7 +36,7 @@
       "jointName": "core_spineLower",
       "feature": {
         "type": "band",
-        "index": 0
+        "index": 5
       },
       "scale": 1,
       "offset": 0,
@@ -62,7 +62,7 @@
       "jointName": "spineLower_spineMid",
       "feature": {
         "type": "band",
-        "index": 4
+        "index": 5
       },
       "scale": 1,
       "smoothing": 0.55,
@@ -76,7 +76,7 @@
       ]
     }
   ],
-  "trackId": null,
+  "trackId": "track01",
   "physics": {
     "gravity": [
       0,
