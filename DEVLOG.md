@@ -70,3 +70,7 @@
 
 2025-11-14 - Camera default zoom distance
 - Doubled the camera’s baseline orbit radius and starting position so the visualizer loads with a wider framing, keeping the full rig in view before the auto-motion kicks in.
+
+2025-11-15 - Preset mapping controls
+- Added a mappings folder to the lil-gui overlay with live dropdowns/sliders for every mapping parameter so the current preset routing is visible at a glance.
+- Wired those controls back into PresetManager updates (feature type/index, axis, scale, clamps, target angles, etc.) so edits immediately persist like the other physics tuning knobs.
