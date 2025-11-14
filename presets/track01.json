@@ -1,27 +1,72 @@
 {
-  "id": "track01-default",
-  "name": "Track 01 Placeholder",
-  "description": "Placeholder preset for bundled track 01. Replace once presets are authored.",
-  "trackId": "track01",
+  "id": "trask01-default",
+  "name": "Track 01 Rig Mapping",
+  "description": "Default mapping proving audio → physics loop",
+  "mappings": [
+    {
+      "id": "core-pulse",
+      "bodyName": "core",
+      "axis": [
+        0,
+        1,
+        0
+      ],
+      "mode": "impulse",
+      "feature": {
+        "type": "rms"
+      },
+      "scale": 1,
+      "offset": 0,
+      "smoothing": 0.35,
+      "min": 0,
+      "max": 1,
+      "weight": 1.2,
+      "damping": 0.1
+    },
+    {
+      "id": "bass-sway",
+      "bodyName": "spineLower",
+      "axis": [
+        0,
+        0,
+        1
+      ],
+      "mode": "torque",
+      "jointName": "core_spineLower",
+      "feature": {
+        "type": "band",
+        "index": 1
+      },
+      "scale": 1,
+      "offset": 0,
+      "smoothing": 0.5,
+      "min": -1,
+      "max": 1,
+      "weight": 4.8,
+      "damping": 0.7,
+      "targetAngles": [
+        -0.55,
+        0.55
+      ]
+    }
+  ],
+  "trackId": null,
   "physics": {
-    "gravity": [0, -9.81, 0],
-    "damping": 0.5,
-    "stiffness": 1.0
+    "gravity": [
+      0,
+      -9.81,
+      0
+    ],
+    "damping": 0.6,
+    "stiffness": 1
   },
   "rendering": {
     "backgroundColor": "#050505",
-    "colorPalette": ["#0ea5e9", "#a855f7", "#f97316"]
-  },
-  "mappings": [
-    {
-      "jointName": "core",
-      "feature": { "type": "rms" },
-      "scale": 1.0,
-      "offset": 0,
-      "smoothing": 0.5,
-      "mode": "torque",
-      "min": -1,
-      "max": 1
-    }
-  ]
+    "bloom": false,
+    "colorPalette": [
+      "#0ea5e9",
+      "#a855f7",
+      "#f97316"
+    ]
+  }
 }
