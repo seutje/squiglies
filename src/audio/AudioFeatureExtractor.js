@@ -10,11 +10,11 @@ const DEFAULT_BAND_DEFINITIONS = [
 ];
 const VALID_FFT_SIZES = [32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768];
 const DEFAULT_SILENCE_GATE = {
-  floorRms: 0.008,
-  ceilingRms: 0.035,
-  attack: 0.55,
-  release: 0.15,
-  activationThreshold: 0.05
+  floorRms: 0.02,
+  ceilingRms: 0.1,
+  attack: 0.6,
+  release: 0.12,
+  activationThreshold: 0.12
 };
 
 export class AudioFeatureExtractor {

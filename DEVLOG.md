@@ -92,3 +92,6 @@
 2025-11-15 - Simplified rig silhouette
 - Removed the articulated arm bodies and their spherical joints from `rigDefinition.js` to keep the physics rig closer to the core spine/tail/orbital forms requested for this pass.
 - Re-ran the Jest suite (`npm test`) to confirm PresetManager and other modules continue to pass without the removed bodies.
+2025-11-15 - Quieter rig response floor
+- Raised the analyser silence gate and rig activity floors so RMS values below roughly 0.02 no longer trigger physics drive and the rig stays calm when audio is near-silent.
+- Synced the rig’s frame activation threshold/movement floor with the new analyser defaults, then ran `npm test` to verify the suites still pass.

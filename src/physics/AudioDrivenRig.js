@@ -33,13 +33,13 @@ export class AudioDrivenRig {
     this.driveIntensity = 1;
     this.dampingMultiplier = 1;
     this._activityLevel = 0;
-    this._activitySmoothing = { attack: 0.35, release: 0.08 };
-    this._fallbackActivityRange = { min: 0.01, max: 0.08 };
-    this._movementFloor = 0.015;
+    this._activitySmoothing = { attack: 0.4, release: 0.08 };
+    this._fallbackActivityRange = { min: 0.02, max: 0.12 };
+    this._movementFloor = 0.025;
     this._silenceDampingBoost = 1.6;
     this._activityDampingScale = 1;
     this._playbackActive = false;
-    this._frameActivationThreshold = 0.05;
+    this._frameActivationThreshold = 0.12;
   }
 
   init() {
