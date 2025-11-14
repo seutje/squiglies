@@ -77,3 +77,6 @@
 2025-11-15 - Preset cache busting
 - Added cache-busting tokens to every track preset JSON URL so browsers always fetch the latest file instead of serving a stale cached copy.
 - Ensured the helper works for all preset path variants (explicit filename, slug, or custom file) without impacting other PresetManager APIs.
+2025-11-15 - Mapping panel sync
+- Fixed the lil-gui synchronization path so dropdowns/sliders update even when their backing values change programmatically, letting the Feature/Drive controls follow whichever mapping is selected.
+- Verified the regression fix by running the full Jest suite (`npm test`).

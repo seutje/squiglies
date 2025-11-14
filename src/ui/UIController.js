@@ -790,25 +790,25 @@ export class UIController {
   }
 
   _setGuiValue(key, value) {
-    this.guiState[key] = value;
     const controller = this.guiControllers[key];
-    if (!controller) return;
-    this._isGuiUpdating = true;
-    controller.setValue(value);
-    this._isGuiUpdating = false;
+    if (controller) {
+      this._isGuiUpdating = true;
+      controller.setValue(value);
+      this._isGuiUpdating = false;
+    } else {
+      this.guiState[key] = value;
+    }
   }
 
   _setMappingGuiValue(key, value) {
-    if (!(key in this.mappingState)) {
-      this.mappingState[key] = value;
+    const controller = this.mappingControllers[key];
+    if (controller) {
+      this._isGuiUpdating = true;
+      controller.setValue(value);
+      this._isGuiUpdating = false;
     } else {
       this.mappingState[key] = value;
     }
-    const controller = this.mappingControllers[key];
-    if (!controller) return;
-    this._isGuiUpdating = true;
-    controller.setValue(value);
-    this._isGuiUpdating = false;
     if (key === "featureType") {
       this._updateFeatureIndexVisibility();
     }
