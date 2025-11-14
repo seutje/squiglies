@@ -46,3 +46,7 @@
 - Added a `PerformanceMonitor`, FPS console logging, and adaptive analyser FFT/downsampling so the loop stays near 60 fps even on lower-power machines.
 - Rebuilt the lighting rig (fog, glow ring, themed palette hooks) plus a cinematic idle camera path so presets can tint the scene and the experience feels deliberate out of the box.
 - Expanded Jest coverage for math utilities + PresetManager mutators/randomizer, refreshed README with the manual QA script, and marked the remaining Phase 7 engineering tasks complete in PLAN.md.
+
+2025-11-14 - Spotlight shadow artifacts
+- Rebuilt the floor into a stylized stage that ignores shadows plus a dedicated shadow-catcher mesh sitting above it, then hid the Rapier debug ground so overlapping receivers no longer produce the radial artifacts when the camera moves.
+- Tuned the spotlight’s bias/normal bias for the new catcher so the rig keeps contact shadows without self-shadow acne.

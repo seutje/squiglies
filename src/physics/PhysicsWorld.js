@@ -92,7 +92,10 @@ export class PhysicsWorld {
     });
     const mesh = new THREE.Mesh(geometry, material);
     mesh.position.copy(new THREE.Vector3(0, -1.2, 0));
-    mesh.receiveShadow = true;
+    // Keep the physics debug mesh invisible so it doesn't interfere with the stylized floor.
+    mesh.receiveShadow = false;
+    mesh.castShadow = false;
+    mesh.visible = false;
 
     this.scene.add(mesh);
 

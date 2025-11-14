@@ -17,8 +17,12 @@ export class SceneManager {
       fill: null,
       accent: null
     };
+    this._stageMesh = null;
     this._groundMaterial = null;
     this._glowMaterial = null;
+    this._glowMesh = null;
+    this._shadowMaterial = null;
+    this._shadowMesh = null;
     this._elapsedTime = 0;
   }
 
@@ -91,6 +95,20 @@ export class SceneManager {
       }
       this.renderer = null;
     }
+
+    this._disposeMesh(this._shadowMesh);
+    this._shadowMesh = null;
+    this._shadowMaterial = null;
+
+    this._disposeMesh(this._stageMesh, false);
+    this._stageMesh = null;
+    this._groundMaterial?.dispose();
+    this._groundMaterial = null;
+
+    this._disposeMesh(this._glowMesh);
+    this._glowMesh = null;
+    this._glowMaterial?.dispose();
+    this._glowMaterial = null;
   }
 
   _setupRenderer() {
@@ -113,7 +131,9 @@ export class SceneManager {
     this._lights.key.position.set(7, 10, 6);
     this._lights.key.castShadow = true;
     this._lights.key.shadow.mapSize.set(2048, 2048);
-    this._lights.key.shadow.bias = -0.0001;
+    // Bias tweaks keep the shadow catcher clean without making the rig hover.
+    this._lights.key.shadow.bias = -0.0002;
+    this._lights.key.shadow.normalBias = 0.015;
     this.scene.add(this._lights.key);
     this.scene.add(this._lights.key.target);
     this._lights.key.target.position.set(0, 0.5, 0);
@@ -143,9 +163,26 @@ export class SceneManager {
       emissiveIntensity: 0.2
     });
     const stage = new THREE.Mesh(stageGeometry, this._groundMaterial);
-    stage.receiveShadow = true;
+    stage.receiveShadow = false;
+    stage.castShadow = false;
+    stage.renderOrder = 0;
     stage.position.y = -1.1;
     this.scene.add(stage);
+    this._stageMesh = stage;
+
+    const shadowGeometry = new THREE.CircleGeometry(radius * 1.05, 80);
+    shadowGeometry.rotateX(-Math.PI / 2);
+    this._shadowMaterial = new THREE.ShadowMaterial({
+      opacity: 0.35,
+      color: 0x000000
+    });
+    this._shadowMaterial.depthWrite = false;
+    const shadowMesh = new THREE.Mesh(shadowGeometry, this._shadowMaterial);
+    shadowMesh.receiveShadow = true;
+    shadowMesh.position.y = stage.position.y + 0.015;
+    shadowMesh.renderOrder = stage.renderOrder + 1;
+    this.scene.add(shadowMesh);
+    this._shadowMesh = shadowMesh;
 
     const glowGeometry = new THREE.RingGeometry(radius - 0.4, radius + 0.45, 90);
     glowGeometry.rotateX(-Math.PI / 2);
@@ -157,7 +194,9 @@ export class SceneManager {
     });
     const glow = new THREE.Mesh(glowGeometry, this._glowMaterial);
     glow.position.y = -1.09;
+    glow.renderOrder = stage.renderOrder + 2;
     this.scene.add(glow);
+    this._glowMesh = glow;
   }
 
   _resize() {
@@ -241,6 +280,17 @@ export class SceneManager {
       this._glowMaterial.color.copy(new THREE.Color(colorValue));
     } catch (error) {
       console.warn("SceneManager: invalid glow color", error);
+    }
+  }
+
+  _disposeMesh(mesh, disposeMaterial = true) {
+    if (!mesh) return;
+    if (mesh.parent) {
+      mesh.parent.remove(mesh);
+    }
+    mesh.geometry?.dispose();
+    if (disposeMaterial) {
+      mesh.material?.dispose();
     }
   }
 }
