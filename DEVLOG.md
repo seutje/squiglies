@@ -86,3 +86,6 @@
 2025-11-15 - Raw analyser frames
 - Removed the feature-level smoothing logic from AudioFeatureExtractor so presets receive the analyser’s instantaneous RMS, band, centroid, rolloff, and energy data with no artificial lag.
 - Updated the corresponding Jest coverage and App bootstrap path, then re-ran `npm test` to verify the analyser + preset suites still pass.
+2025-11-15 - Normalized centroid/rolloff features
+- Normalized the spectral centroid and rolloff features to 0–1 inside AudioFeatureExtractor (while keeping Hz readouts for the GUI) so presets can treat them like other normalized signals.
+- Updated the AudioDrivenRig feature resolver, feature monitor panel, and accompanying Jest coverage to consume the normalized values.

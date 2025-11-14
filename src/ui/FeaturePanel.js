@@ -161,15 +161,15 @@ export class FeaturePanel {
     const peak = clamp01(frame?.peak ?? 0);
     const energy = clamp01(frame?.energy ?? 0);
     const activity = clamp01(frame?.activity ?? 0);
-    const centroid = Math.max(0, Number(frame?.centroid) || 0);
-    const rolloff = Math.max(0, Number(frame?.rolloff) || 0);
+    const centroidHz = Math.max(0, Number(frame?.centroidHz ?? frame?.centroid) || 0);
+    const rolloffHz = Math.max(0, Number(frame?.rolloffHz ?? frame?.rolloff) || 0);
 
     this.guiState.rms = Number(rms.toFixed(3));
     this.guiState.peak = Number(peak.toFixed(3));
     this.guiState.energy = Number(energy.toFixed(3));
     this.guiState.activity = Number(activity.toFixed(3));
-    this.guiState.centroid = Math.round(centroid);
-    this.guiState.rolloff = Math.round(rolloff);
+    this.guiState.centroid = Math.round(centroidHz);
+    this.guiState.rolloff = Math.round(rolloffHz);
     Object.values(this.summaryControllers).forEach((controller) => controller.updateDisplay?.());
   }
 

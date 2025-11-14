@@ -31,6 +31,7 @@ describe("AudioFeatureExtractor", () => {
   const fftSize = 8;
   const sampleRate = 48000;
   const freqResolution = sampleRate / fftSize;
+  const nyquist = sampleRate / 2;
 
   function createContext(analyser) {
     return {
@@ -92,8 +93,11 @@ describe("AudioFeatureExtractor", () => {
     expect(frame.bands[1]).toBeCloseTo(expectedHigh, 5);
     expect(frame.rms).toBeCloseTo(computeRmsFromBytes(Uint8Array.from(timeSamples)), 5);
     expect(frame.peak).toBeCloseTo(1, 5);
-    expect(frame.centroid).toBeCloseTo(expectedCentroid, 3);
-    expect(frame.rolloff).toBeCloseTo(expectedRolloff, 5);
+    expect(frame.centroid).toBeCloseTo(expectedCentroid / nyquist, 5);
+    expect(frame.centroidHz).toBeCloseTo(expectedCentroid, 3);
+    expect(frame.rolloff).toBeCloseTo(expectedRolloff / nyquist, 5);
+    expect(frame.rolloffHz).toBeCloseTo(expectedRolloff, 5);
+    expect(frame.nyquist).toBeCloseTo(nyquist, 5);
     expect(frame.energy).toBeCloseTo(totalEnergy / normalizedFreq.length, 5);
   });
 

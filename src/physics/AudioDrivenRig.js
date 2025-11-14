@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { clamp, smoothValue } from "../utils/math.js";
+import { clamp, smoothValue, safeDivide } from "../utils/math.js";
 import {
   BASELINE_RIG_PRESET,
   JOINT_MAPPING_SCHEMA,
@@ -346,17 +346,30 @@ export class AudioDrivenRig {
       case "energy":
         return frame.energy ?? frame.rms ?? 0;
       case "centroid": {
-        const normalized = (frame.centroid ?? 0) / 8000;
-        return clamp(normalized, 0, 1);
+        return this._normalizeFrequencyFeature(frame, frame.centroid, frame.centroidHz);
       }
       case "rolloff": {
-        const normalized = (frame.rolloff ?? 0) / 16000;
-        return clamp(normalized, 0, 1);
+        return this._normalizeFrequencyFeature(frame, frame.rolloff, frame.rolloffHz);
       }
       case "rms":
       default:
         return frame.rms ?? 0;
     }
+  }
+
+  _normalizeFrequencyFeature(frame, normalizedValue, hzValue) {
+    if (Number.isFinite(normalizedValue) && normalizedValue <= 1) {
+      return clamp(normalizedValue, 0, 1);
+    }
+    const fallbackNyquist = 22050;
+    const frequency = Number.isFinite(hzValue)
+      ? hzValue
+      : Number.isFinite(normalizedValue)
+        ? normalizedValue
+        : 0;
+    const nyquist = frame?.nyquist ?? frame?.frequencyRange?.nyquist ?? fallbackNyquist;
+    const normalized = safeDivide(frequency, nyquist || 1);
+    return clamp(normalized, 0, 1);
   }
 
   _computeDriveValue(value, mapping) {

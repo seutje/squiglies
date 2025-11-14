@@ -88,7 +88,15 @@ export class AudioFeatureExtractor {
 
   _computeFrame() {
     const rmsResult = this._computeRmsAndPeak();
-    const { bands, averageEnergy, centroid, rolloff } = this._computeFrequencyFeatures();
+    const {
+      bands,
+      averageEnergy,
+      centroid,
+      rolloff,
+      centroidNormalized,
+      rolloffNormalized,
+      nyquist
+    } = this._computeFrequencyFeatures();
     const timestamp = typeof performance !== "undefined" ? performance.now() : Date.now();
     const activity = this._updateActivityLevel(rmsResult.rms);
 
@@ -98,8 +106,11 @@ export class AudioFeatureExtractor {
       peak: rmsResult.peak,
       bands,
       bandLabels: this.bandDefinitions.map((band) => band.label),
-      centroid,
-      rolloff,
+      centroid: centroidNormalized,
+      centroidHz: centroid,
+      rolloff: rolloffNormalized,
+      rolloffHz: rolloff,
+      nyquist,
       energy: averageEnergy,
       activity
     };
@@ -110,7 +121,9 @@ export class AudioFeatureExtractor {
       frame.peak = 0;
       frame.energy = 0;
       frame.centroid = 0;
+      frame.centroidHz = 0;
       frame.rolloff = 0;
+      frame.rolloffHz = 0;
       frame.bands = new Array(frame.bands.length).fill(0);
     }
 
@@ -135,11 +148,15 @@ export class AudioFeatureExtractor {
   _computeFrequencyFeatures() {
     const binCount = this.analyser.frequencyBinCount;
     if (!binCount) {
+      const nyquist = this.audioContext.sampleRate / 2;
       return {
         bands: new Array(this.bandDefinitions.length).fill(0),
         averageEnergy: 0,
         centroid: 0,
-        rolloff: 0
+        centroidNormalized: 0,
+        rolloff: 0,
+        rolloffNormalized: 0,
+        nyquist
       };
     }
 
@@ -158,6 +175,8 @@ export class AudioFeatureExtractor {
       return sum + frequency * value;
     }, 0);
     const centroid = safeDivide(weightedSum, totalEnergy);
+    const nyquist = this.audioContext.sampleRate / 2;
+    const centroidNormalized = clamp(safeDivide(centroid, nyquist), 0, 1);
 
     const rolloffThreshold = totalEnergy * this.rolloffPercent;
     let accumulated = 0;
@@ -171,12 +190,16 @@ export class AudioFeatureExtractor {
     }
 
     const averageEnergy = normalized.length ? totalEnergy / normalized.length : 0;
+    const rolloffNormalized = clamp(safeDivide(rolloffFrequency, nyquist), 0, 1);
 
     return {
       bands: bandValues,
       averageEnergy,
       centroid,
-      rolloff: rolloffFrequency
+      centroidNormalized,
+      rolloff: rolloffFrequency,
+      rolloffNormalized,
+      nyquist
     };
   }
 
