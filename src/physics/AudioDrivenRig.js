@@ -7,6 +7,7 @@ import {
   RIG_DEFINITION,
   normalizeMappingConfig
 } from "../config/rigDefinition.js";
+import { DEFAULT_RESPAWN_THRESHOLD, hasBodiesBelowThreshold } from "./rigBounds.js";
 
 export class AudioDrivenRig {
   constructor({ physicsWorld, scene, maxBodies = RIG_BODY_LIMIT } = {}) {
@@ -40,6 +41,7 @@ export class AudioDrivenRig {
     this._activityDampingScale = 1;
     this._playbackActive = false;
     this._frameActivationThreshold = 0.12;
+    this._respawnThresholdY = DEFAULT_RESPAWN_THRESHOLD;
   }
 
   init() {
@@ -550,6 +552,11 @@ export class AudioDrivenRig {
     }
     const activity = Number.isFinite(frame.activity) ? frame.activity : 0;
     return activity >= this._frameActivationThreshold;
+  }
+
+  hasFallenBelowY(thresholdY = null) {
+    const limit = Number.isFinite(thresholdY) ? thresholdY : this._respawnThresholdY;
+    return hasBodiesBelowThreshold(this.world, this.bodiesByName, limit);
   }
 
   _bleedResidualMotion(forceResetPose = false) {

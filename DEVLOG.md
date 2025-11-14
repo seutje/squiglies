@@ -95,3 +95,6 @@
 2025-11-15 - Quieter rig response floor
 - Raised the analyser silence gate and rig activity floors so RMS values below roughly 0.02 no longer trigger physics drive and the rig stays calm when audio is near-silent.
 - Synced the rig’s frame activation threshold/movement floor with the new analyser defaults, then ran `npm test` to verify the suites still pass.
+2025-11-14 - Rig respawn safety net
+- Added a rig bounds helper with Jest coverage so we can quickly detect when any Rapier body dips well below the ground plane.
+- Updated AudioDrivenRig/App to use the helper and automatically reset the pose whenever the rig falls off the floor, keeping the scene recoverable without manual reloads.

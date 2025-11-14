@@ -11,6 +11,10 @@ import { UIController } from "../ui/UIController.js";
 import { PerformanceMonitor } from "../utils/PerformanceMonitor.js";
 import { FeaturePanel } from "../ui/FeaturePanel.js";
 
+const GROUND_PLANE_Y = -1.2;
+const RIG_RESPAWN_BUFFER = 1.2;
+const RIG_RESPAWN_THRESHOLD = GROUND_PLANE_Y - RIG_RESPAWN_BUFFER;
+
 export class App {
   constructor({ visualizerContainer, controlsRoot }) {
     this.visualizerContainer = visualizerContainer;
@@ -41,6 +45,7 @@ export class App {
     this._fftTier = "high";
     this._audioPlaybackActive = false;
     this.featurePanel = null;
+    this._rigRespawnThreshold = RIG_RESPAWN_THRESHOLD;
   }
 
   async init() {
@@ -128,6 +133,7 @@ export class App {
     if (this._audioPlaybackActive) {
       this.physicsWorld?.step(deltaSeconds);
     }
+    this._respawnRigIfNeeded();
     this.audioDrivenRig?.syncVisuals();
     this.sceneManager?.update(deltaSeconds);
     this.cameraController?.update(deltaSeconds);
@@ -302,6 +308,15 @@ export class App {
     }
     this.audioDrivenRig?.applyPhysicsTuning(physics);
     this.sceneManager?.applyRenderingSettings(preset.rendering ?? {});
+  }
+
+  _respawnRigIfNeeded() {
+    if (!this.audioDrivenRig || !this.physicsWorld) {
+      return;
+    }
+    if (this.audioDrivenRig.hasFallenBelowY(this._rigRespawnThreshold)) {
+      this.audioDrivenRig.resetPose();
+    }
   }
 
   _trackPerformance(deltaSeconds, timestamp) {
