@@ -10,6 +10,16 @@ export class SceneManager {
 
     this._resizeObserver = null;
     this._fallbackResizeHandler = null;
+    this._lights = {
+      hemisphere: null,
+      key: null,
+      rim: null,
+      fill: null,
+      accent: null
+    };
+    this._groundMaterial = null;
+    this._glowMaterial = null;
+    this._elapsedTime = 0;
   }
 
   init() {
@@ -20,6 +30,7 @@ export class SceneManager {
     this._setupRenderer();
     this._setupLights();
     this._addGroundPlane();
+    this.scene.fog = new THREE.FogExp2(new THREE.Color(0x03050a), 0.06);
     this._resize();
 
     if (typeof ResizeObserver !== "undefined") {
@@ -31,7 +42,27 @@ export class SceneManager {
     }
   }
 
-  update() {}
+  update(deltaSeconds = 0) {
+    if (!Number.isFinite(deltaSeconds) || deltaSeconds <= 0) {
+      return;
+    }
+    this._elapsedTime += deltaSeconds;
+    const wobble = Math.sin(this._elapsedTime * 0.6) * 0.4;
+    if (this._lights?.accent) {
+      this._lights.accent.intensity = 0.45 + Math.sin(this._elapsedTime * 1.4) * 0.2;
+      this._lights.accent.position.x = Math.cos(this._elapsedTime * 0.4) * 2.4;
+      this._lights.accent.position.z = Math.sin(this._elapsedTime * 0.4) * 2.4;
+    }
+    if (this._lights?.rim) {
+      this._lights.rim.intensity = 0.3 + Math.sin(this._elapsedTime * 0.9) * 0.08;
+    }
+    if (this._glowMaterial) {
+      this._glowMaterial.opacity = 0.12 + (Math.sin(this._elapsedTime * 1.2) + 1) * 0.08;
+    }
+    if (this._groundMaterial) {
+      this._groundMaterial.emissiveIntensity = 0.15 + (Math.sin(this._elapsedTime * 0.5) + 1) * 0.1;
+    }
+  }
 
   render(camera) {
     if (!this.renderer || !camera) return;
@@ -75,31 +106,58 @@ export class SceneManager {
   }
 
   _setupLights() {
-    const ambient = new THREE.AmbientLight(0x6ab5ff, 0.4);
-    this.scene.add(ambient);
+    this._lights.hemisphere = new THREE.HemisphereLight(0x1b365d, 0x020409, 0.45);
+    this.scene.add(this._lights.hemisphere);
 
-    const keyLight = new THREE.DirectionalLight(0xffffff, 0.8);
-    keyLight.position.set(5, 8, 4);
-    keyLight.castShadow = true;
-    keyLight.shadow.mapSize.set(1024, 1024);
-    this.scene.add(keyLight);
+    this._lights.key = new THREE.SpotLight(0x93c5fd, 1.25, 60, Math.PI / 5, 0.45, 0.8);
+    this._lights.key.position.set(7, 10, 6);
+    this._lights.key.castShadow = true;
+    this._lights.key.shadow.mapSize.set(2048, 2048);
+    this._lights.key.shadow.bias = -0.0001;
+    this.scene.add(this._lights.key);
+    this.scene.add(this._lights.key.target);
+    this._lights.key.target.position.set(0, 0.5, 0);
 
-    const rimLight = new THREE.DirectionalLight(0x88c0ff, 0.4);
-    rimLight.position.set(-6, 4, -4);
-    this.scene.add(rimLight);
+    this._lights.rim = new THREE.DirectionalLight(0xf472b6, 0.35);
+    this._lights.rim.position.set(-6, 5, -5);
+    this.scene.add(this._lights.rim);
+
+    this._lights.fill = new THREE.PointLight(0x38bdf8, 0.6, 30);
+    this._lights.fill.position.set(0, 3.5, 0);
+    this.scene.add(this._lights.fill);
+
+    this._lights.accent = new THREE.PointLight(0x22d3ee, 0.45, 18);
+    this._lights.accent.position.set(2.5, 2.5, -2);
+    this.scene.add(this._lights.accent);
   }
 
   _addGroundPlane() {
-    const groundGeometry = new THREE.CylinderGeometry(4, 4, 0.2, 64);
-    const groundMaterial = new THREE.MeshStandardMaterial({
+    const radius = 5.5;
+    const stageGeometry = new THREE.CircleGeometry(radius, 80);
+    stageGeometry.rotateX(-Math.PI / 2);
+    this._groundMaterial = new THREE.MeshStandardMaterial({
       color: 0x0f172a,
-      roughness: 0.8,
-      metalness: 0.05
+      metalness: 0.35,
+      roughness: 0.65,
+      emissive: new THREE.Color(0x0ea5e9),
+      emissiveIntensity: 0.2
     });
-    const ground = new THREE.Mesh(groundGeometry, groundMaterial);
-    ground.position.y = -1.2;
-    ground.receiveShadow = true;
-    this.scene.add(ground);
+    const stage = new THREE.Mesh(stageGeometry, this._groundMaterial);
+    stage.receiveShadow = true;
+    stage.position.y = -1.1;
+    this.scene.add(stage);
+
+    const glowGeometry = new THREE.RingGeometry(radius - 0.4, radius + 0.45, 90);
+    glowGeometry.rotateX(-Math.PI / 2);
+    this._glowMaterial = new THREE.MeshBasicMaterial({
+      color: 0x38bdf8,
+      transparent: true,
+      opacity: 0.18,
+      side: THREE.DoubleSide
+    });
+    const glow = new THREE.Mesh(glowGeometry, this._glowMaterial);
+    glow.position.y = -1.09;
+    this.scene.add(glow);
   }
 
   _resize() {
@@ -128,8 +186,61 @@ export class SceneManager {
     try {
       const targetColor = color ? new THREE.Color(color) : new THREE.Color(DEFAULT_CLEAR_COLOR);
       this.renderer.setClearColor(targetColor, 1);
+      this.scene.background = targetColor;
+      if (this.scene.fog) {
+        this.scene.fog.color = targetColor.clone().multiplyScalar(0.35);
+      }
     } catch (error) {
       console.warn("SceneManager: Invalid background color", color, error);
+    }
+  }
+
+  applyRenderingSettings(rendering = {}) {
+    if (!rendering || typeof rendering !== "object") return;
+    if (rendering.backgroundColor) {
+      this.setBackgroundColor(rendering.backgroundColor);
+    }
+    if (Array.isArray(rendering.colorPalette) && rendering.colorPalette.length) {
+      this._applyPalette(rendering.colorPalette);
+    }
+  }
+
+  _applyPalette(palette) {
+    const [primary, secondary, accent] = palette;
+    this._setLightColor(this._lights.key, primary ?? secondary);
+    this._setLightColor(this._lights.rim, secondary ?? accent);
+    this._setLightColor(this._lights.fill, accent ?? primary);
+    this._setGroundColor(primary ?? DEFAULT_CLEAR_COLOR);
+    this._setGlowColor(accent ?? secondary ?? primary);
+  }
+
+  _setLightColor(light, colorValue) {
+    if (!light || !colorValue) return;
+    try {
+      const color = new THREE.Color(colorValue);
+      light.color.copy(color);
+    } catch (error) {
+      console.warn("SceneManager: invalid light color", colorValue, error);
+    }
+  }
+
+  _setGroundColor(colorValue) {
+    if (!this._groundMaterial || !colorValue) return;
+    try {
+      const color = new THREE.Color(colorValue);
+      this._groundMaterial.color.copy(color);
+      this._groundMaterial.emissive.copy(color).multiplyScalar(0.2);
+    } catch (error) {
+      console.warn("SceneManager: invalid ground color", error);
+    }
+  }
+
+  _setGlowColor(colorValue) {
+    if (!this._glowMaterial || !colorValue) return;
+    try {
+      this._glowMaterial.color.copy(new THREE.Color(colorValue));
+    } catch (error) {
+      console.warn("SceneManager: invalid glow color", error);
     }
   }
 }

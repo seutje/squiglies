@@ -9,6 +9,7 @@ import { TransportControls } from "../ui/TransportControls.js";
 import { PresetManager } from "../config/PresetManager.js";
 import { PresetControls } from "../ui/PresetControls.js";
 import { UIController } from "../ui/UIController.js";
+import { PerformanceMonitor } from "../utils/PerformanceMonitor.js";
 
 export class App {
   constructor({ visualizerContainer, controlsRoot }) {
@@ -35,6 +36,10 @@ export class App {
     this._isInitialized = false;
     this._featureSubscribers = new Set();
     this._latestFeatureFrame = null;
+    this.performanceMonitor = null;
+    this._featureSampleInterval = 1 / 60;
+    this._featureAccumulator = 0;
+    this._fftTier = "high";
   }
 
   async init() {
@@ -70,6 +75,7 @@ export class App {
     this.audioDrivenRig.init();
 
     await this._initAudioLayer();
+    this.performanceMonitor = new PerformanceMonitor();
     this._setupResizeHandling();
     this._isInitialized = true;
   }
@@ -97,10 +103,17 @@ export class App {
   _tick(timestamp) {
     if (!this.isRunning) return;
 
-    const deltaSeconds = (timestamp - this.lastTimestamp) / 1000;
+    const deltaSecondsRaw = (timestamp - this.lastTimestamp) / 1000;
+    const deltaSeconds = Math.min(deltaSecondsRaw, 1 / 24);
     this.lastTimestamp = timestamp;
 
-    const featureFrame = this._updateAudioFeatures();
+    this._featureAccumulator += Math.max(deltaSecondsRaw, 0);
+    let featureFrame = this._latestFeatureFrame;
+    if (!featureFrame || this._featureAccumulator >= this._featureSampleInterval) {
+      featureFrame = this._updateAudioFeatures();
+      this._featureAccumulator = 0;
+    }
+
     const activePreset = this.presetManager?.getCurrentPreset() ?? null;
     this.audioDrivenRig?.update(featureFrame, deltaSeconds, activePreset);
     this.physicsWorld?.step(deltaSeconds);
@@ -108,6 +121,7 @@ export class App {
     this.sceneManager?.update(deltaSeconds);
     this.cameraController?.update(deltaSeconds);
     this.sceneManager?.render(this.cameraController?.camera);
+    this._trackPerformance(Math.max(deltaSecondsRaw, 0), timestamp);
 
     this._rafHandle = requestAnimationFrame(this._boundTick);
   }
@@ -272,9 +286,49 @@ export class App {
       this.physicsWorld?.setGravity(physics.gravity);
     }
     this.audioDrivenRig?.applyPhysicsTuning(physics);
-    const backgroundColor = preset.rendering?.backgroundColor;
-    if (backgroundColor) {
-      this.sceneManager?.setBackgroundColor(backgroundColor);
+    this.sceneManager?.applyRenderingSettings(preset.rendering ?? {});
+  }
+
+  _trackPerformance(deltaSeconds, timestamp) {
+    if (!this.performanceMonitor) return;
+    const result = this.performanceMonitor.record(deltaSeconds, timestamp);
+    if (!result) return;
+    const { didLog, metrics } = result;
+    if (didLog && metrics) {
+      console.table({
+        "avg fps": metrics.fps.toFixed(1),
+        "avg frame (ms)": metrics.frameMs.toFixed(2),
+        "min frame (ms)": metrics.minMs.toFixed(2),
+        "max frame (ms)": metrics.maxMs.toFixed(2)
+      });
     }
+    this._maybeAdjustFeatureDetail();
+  }
+
+  _maybeAdjustFeatureDetail() {
+    if (!this.audioFeatureExtractor || !this.performanceMonitor) {
+      return;
+    }
+    const fps = this.performanceMonitor.getAverageFps();
+    if (!fps) return;
+    let tier = "high";
+    if (fps < 48) {
+      tier = "medium";
+    }
+    if (fps < 42) {
+      tier = "low";
+    }
+    if (tier === this._fftTier) {
+      return;
+    }
+    this._fftTier = tier;
+    const fftSize = tier === "high" ? 2048 : tier === "medium" ? 1024 : 512;
+    const sampleInterval = tier === "high" ? 1 / 60 : tier === "medium" ? 1 / 55 : 1 / 45;
+    if (this.audioFeatureExtractor.setFftSize(fftSize)) {
+      console.info(
+        `[Performance] Switched analyser FFT size to ${fftSize} for ${tier} detail (avg fps ${fps.toFixed(1)})`
+      );
+    }
+    this._featureSampleInterval = sampleInterval;
   }
 }

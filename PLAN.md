@@ -47,10 +47,10 @@ This plan is scoped for AI agents. Update checkboxes as work lands. Default assu
 - [x] Surface minimal status/error messaging in the UI per Section 14 of `DESIGN.md`.
 
 ## Phase 7 – Polish, Performance, and QA
-- [ ] Tune FFT size / update cadence to maintain 60 fps; add simple performance metrics logging.
-- [ ] Implement camera polish (auto-path or cinematic motion) and improved lighting/scene theming.
-- [ ] Add automated Jest regression tests for PresetManager and math helpers; document manual test script (play bundled track, load preset, switch to user file, export preset).
-- [ ] Finalize DEVLOG entry + update documentation (README/usage notes) for release packaging.
+- [x] Tune FFT size / update cadence to maintain 60 fps; add simple performance metrics logging.
+- [x] Implement camera polish (auto-path or cinematic motion) and improved lighting/scene theming.
+- [x] Add automated Jest regression tests for PresetManager and math helpers; document manual test script (play bundled track, load preset, switch to user file, export preset).
+- [x] Finalize DEVLOG entry + update documentation (README/usage notes) for release packaging.
 - [ ] Human: run full experience review, confirm visual/physics vibe, and officially check off the phase.
 
 ## Ongoing Maintenance Tasks

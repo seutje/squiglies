@@ -1,6 +1,13 @@
-# Physics Audio Visualizer – Scaffold
+# Physics Audio Visualizer
 
-This repository hosts the static ES-module based playground described in `DESIGN.md`. Phase 0 establishes the HTML/JS skeleton so later phases can focus on rendering, physics, audio, and presets.
+Browser-based visualizer that pairs a Rapier-driven rig with Web Audio feature extraction, cinematic Three.js lighting, and preset tooling. Everything ships as static ES modules so it can run from any static host.
+
+## Feature Highlights
+
+- Three.js scene with upgraded stage lighting, fog, and glow accents plus an auto-path camera that eases into cinematic orbits when idle.
+- Rapier rig with audio-driven impulses/torques fed by a dynamic FFT analyser that automatically downshifts detail when performance drops.
+- Track registry, transport controls, preset import/export/randomizer, and user-audio uploads wired into the UI shell from `mockup.png`.
+- Console-level performance HUD (avg/min/max FPS) driven by the new `PerformanceMonitor`, so perf regressions are easy to spot without external tooling.
 
 ## Getting Started
 
@@ -8,48 +15,46 @@ This repository hosts the static ES-module based playground described in `DESIGN
    ```sh
    npm install
    ```
-2. Launch the local static server (uses `http-server` under the hood):
+2. Serve the static site:
    ```sh
    npm run start
    ```
-   The site serves on `http://localhost:8000`. Because this is a static build, any other dev server (Vite preview, `python -m http.server`, etc.) will also work if preferred.
+   Visit `http://localhost:8000` (or point a different static server at the repo root).
+3. Run the Jest suites:
+   ```sh
+   npm test
+   ```
 
-## Available Scripts
+## Manual QA Script
 
-- `npm run start` – Runs `http-server` to serve the repo root for local development.
-- `npm test` – Executes the Jest test runner (currently no suites are defined; future phases will add them alongside source modules).
+Follow this quick loop before handing off a build:
+
+1. `npm run start`, open the app, and press Play on the default bundled track. Verify the rig responds and the console logs FPS snapshots.
+2. Use the preset dropdown to swap to a different track preset, then hit "Random Preset" and confirm the new lighting palette and camera glide react in real time.
+3. Click the file input, load any local MP3, and ensure the analyser re-locks and the rig re-centers without console errors.
+4. Export the current preset (JSON download), clear it via the UI, and import the saved file to confirm the configuration round-trips.
 
 ## Project Layout
 
 ```
-index.html             # Entry document per DESIGN.md (containers + inline styles)
-mockup.png             # Visual reference for the planned UI layout/state
+index.html               # Static entry document (containers + inline styles)
 src/
-  main.js              # Boots the App with DOM references
-  core/App.js          # Minimal RAF loop placeholder (pre-render/physics wiring)
-audio/                 # Bundled album tracks (11 total)
-  01 - Shiny City.mp3
-  02 - Shadowline.mp3
-  03 - Glass Feed.mp3
-  04 - Pressure Line.mp3
-  05 - Nobody's Brand.mp3
-  06 - Reload Reload.mp3
-  07 - Bit by Bit.mp3
-  08 - Like Water.mp3
-  09 - Grooving Out.mp3
-  10 - Built Different.mp3
-  11 - Cooking Up.mp3
-presets/
-  track01.json ... track11.json  # Schema-aligned preset stubs keyed by track ID (01-11)
+  main.js                # Boots App with DOM references
+  core/App.js            # Orchestrates audio/physics/render loops
+  audio/                 # AudioManager, FeatureExtractor, TrackRegistry
+  physics/               # PhysicsWorld + AudioDrivenRig definitions
+  render/                # SceneManager + CameraController polish
+  config/                # PresetManager + rig definitions
+  ui/                    # Transport/preset controls + track UI
+  utils/                 # math helpers, download helper, PerformanceMonitor
+audio/                   # Bundled MP3 catalog (11 mastered tracks)
+presets/                 # Track-aligned preset JSON stubs
 ```
 
-## Visual Reference
+## Testing & Quality Gates
 
-`mockup.png` in the repo root captures the intended arrangement of the transport controls, selectors, and visualizer chrome. Use it as the baseline when expanding the HTML/CSS or wiring up `UIController` so future iterations stay aligned with the approved layout.
+- `npm test` runs the math helper specs plus PresetManager regression coverage (random preset generation, track binding, imports, etc.).
+- Manual QA (see above) covers the transport, preset lifecycle, user-audio uploads, and export/import flows.
+- Runtime performance is traceable via the `PerformanceMonitor` console logs (avg/min/max FPS) plus the analyser auto-tuning messages.
 
-### Next Steps
-
-- Reference `mockup.png` as you build out the UI so control placement matches the approved layout.
-- Keep the bundled MP3 list above in sync with any future asset swaps (filenames are part of the Track Registry contract).
-- Flesh out rendering, physics, audio, and preset modules following the roadmap in `PLAN.md`.
-- Add Jest test suites as features are implemented.
+For design, architecture, and module contracts, keep `DESIGN.md` and `PLAN.md` handy—they're the canonical references for future contributions.

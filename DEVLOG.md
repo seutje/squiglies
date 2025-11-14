@@ -42,3 +42,7 @@
 2025-11-14 - Scene cleanup
 - Removed the torus-knot placeholder mesh from `SceneManager` so the center of the scene stays clear for the physics rig.
 - Retained only the ground platform initialization so lighting/shadows still have a visual reference plane.
+2025-11-14 - Phase 7 polish + QA prep
+- Added a `PerformanceMonitor`, FPS console logging, and adaptive analyser FFT/downsampling so the loop stays near 60 fps even on lower-power machines.
+- Rebuilt the lighting rig (fog, glow ring, themed palette hooks) plus a cinematic idle camera path so presets can tint the scene and the experience feels deliberate out of the box.
+- Expanded Jest coverage for math utilities + PresetManager mutators/randomizer, refreshed README with the manual QA script, and marked the remaining Phase 7 engineering tasks complete in PLAN.md.

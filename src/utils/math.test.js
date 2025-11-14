@@ -6,6 +6,12 @@ describe("math helpers", () => {
     expect(clamp(-2, -1, 3)).toBe(-1);
   });
 
+  test("clamp swaps inverted bounds and guards non-finite values", () => {
+    expect(clamp(5, 10, -2)).toBe(5);
+    expect(clamp(50, 10, -2)).toBe(10);
+    expect(clamp(Number.NaN, -1, 1)).toBe(-1);
+  });
+
   test("lerp interpolates within range", () => {
     expect(lerp(0, 10, 0.5)).toBe(5);
     expect(lerp(5, 15, 2)).toBe(15);
@@ -19,6 +25,10 @@ describe("math helpers", () => {
     expect(smoothValue(undefined, target, 0.8)).toBe(target);
   });
 
+  test("smoothValue clamps smoothing factor to < 1", () => {
+    expect(smoothValue(0, 10, 1.5)).toBeCloseTo(0, 3);
+  });
+
   test("normalize maps values to 0-1 range", () => {
     expect(normalize(5, 0, 10)).toBe(0.5);
     expect(normalize(10, 10, 10)).toBe(0);
@@ -27,5 +37,10 @@ describe("math helpers", () => {
   test("safeDivide guards against zero denominator", () => {
     expect(safeDivide(10, 2)).toBe(5);
     expect(safeDivide(10, 0)).toBe(0);
+  });
+
+  test("safeDivide returns 0 when numerator is not finite", () => {
+    expect(safeDivide(Number.NaN, 3)).toBe(0);
+    expect(safeDivide(Infinity, 3)).toBe(0);
   });
 });

@@ -8,6 +8,7 @@ const DEFAULT_BAND_DEFINITIONS = [
   { label: "highMid", min: 2000, max: 6000 },
   { label: "high", min: 6000, max: 16000 }
 ];
+const VALID_FFT_SIZES = [32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768];
 
 export class AudioFeatureExtractor {
   constructor({
@@ -50,6 +51,18 @@ export class AudioFeatureExtractor {
 
   getLatestFrame() {
     return this._latestFrame;
+  }
+
+  setFftSize(nextSize) {
+    const target = this._coerceFftSize(nextSize);
+    if (!target || target === this.fftSize) {
+      return false;
+    }
+    this.analyser.fftSize = target;
+    this.fftSize = target;
+    this.frequencyData = new Uint8Array(this.analyser.frequencyBinCount);
+    this.timeDomainData = new Uint8Array(this.fftSize);
+    return true;
   }
 
   update() {
@@ -181,6 +194,25 @@ export class AudioFeatureExtractor {
         max
       };
     });
+  }
+
+  _coerceFftSize(candidate) {
+    const numeric = Number(candidate);
+    if (!Number.isFinite(numeric)) {
+      return null;
+    }
+    const clamped = clamp(Math.round(numeric), VALID_FFT_SIZES[0], VALID_FFT_SIZES[VALID_FFT_SIZES.length - 1]);
+    let closest = VALID_FFT_SIZES[0];
+    let closestDelta = Math.abs(clamped - closest);
+    for (let i = 1; i < VALID_FFT_SIZES.length; i += 1) {
+      const value = VALID_FFT_SIZES[i];
+      const delta = Math.abs(clamped - value);
+      if (delta < closestDelta) {
+        closest = value;
+        closestDelta = delta;
+      }
+    }
+    return closest;
   }
 }
 

@@ -87,4 +87,25 @@ describe("PresetManager", () => {
     expect(typeof exported).toBe("string");
     expect(exported).toContain(preset.id);
   });
+
+  test("updateCurrentPreset applies updater and preserves track binding", () => {
+    const baseline = manager.setActiveTrack("track-test");
+    expect(baseline.trackId).toBe("track-test");
+
+    const updated = manager.updateCurrentPreset((draft) => {
+      draft.physics.damping = 0.42;
+      draft.rendering.backgroundColor = "#123456";
+    });
+
+    expect(updated.physics.damping).toBeCloseTo(0.42);
+    expect(manager.getCurrentPreset().trackId).toBe("track-test");
+    expect(manager.getCurrentPreset().rendering.backgroundColor).toBe("#123456");
+  });
+
+  test("generateRandomPreset produces themed rendering data", () => {
+    const preset = manager.generateRandomPreset();
+    expect(Array.isArray(preset.rendering.colorPalette)).toBe(true);
+    expect(preset.rendering.colorPalette.length).toBeGreaterThanOrEqual(3);
+    expect(typeof preset.rendering.backgroundColor).toBe("string");
+  });
 });
