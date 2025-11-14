@@ -13,7 +13,8 @@
       ],
       "mode": "impulse",
       "feature": {
-        "type": "rms"
+        "type": "band",
+        "index": 0
       },
       "scale": 1,
       "offset": 0,
@@ -35,7 +36,7 @@
       "jointName": "core_spineLower",
       "feature": {
         "type": "band",
-        "index": 1
+        "index": 0
       },
       "scale": 1,
       "offset": 0,
@@ -47,6 +48,31 @@
       "targetAngles": [
         -0.55,
         0.55
+      ]
+    },
+    {
+      "id": "mid-spiral",
+      "bodyName": "spineMid",
+      "axis": [
+        1,
+        0,
+        0
+      ],
+      "mode": "torque",
+      "jointName": "spineLower_spineMid",
+      "feature": {
+        "type": "band",
+        "index": 4
+      },
+      "scale": 1,
+      "smoothing": 0.55,
+      "min": -1,
+      "max": 1,
+      "weight": 3.4,
+      "damping": 0.6,
+      "targetAngles": [
+        -0.4,
+        0.4
       ]
     }
   ],
