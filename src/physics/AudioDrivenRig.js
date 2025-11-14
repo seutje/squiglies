@@ -8,6 +8,7 @@ import {
   normalizeMappingConfig
 } from "../config/rigDefinition.js";
 import { DEFAULT_RESPAWN_THRESHOLD, hasBodiesBelowThreshold } from "./rigBounds.js";
+import { ImpulseZeroCenter } from "./ImpulseZeroCenter.js";
 
 export class AudioDrivenRig {
   constructor({ physicsWorld, scene, maxBodies = RIG_BODY_LIMIT } = {}) {
@@ -25,6 +26,7 @@ export class AudioDrivenRig {
     this.smoothingState = new Map();
     this._driveHistory = new Map();
     this._bodyConfigs = new Map();
+    this._impulseCenter = new ImpulseZeroCenter();
 
     this._currentPreset = BASELINE_RIG_PRESET;
     this._meshGroup = new THREE.Group();
@@ -107,7 +109,11 @@ export class AudioDrivenRig {
       }
 
       if (mapping.mode === "impulse") {
-        this._applyImpulse(mapping.bodyName, mapping.axis, stabilized * (mapping.weight ?? 1));
+        const centered = this._zeroCenterImpulse(mappingKey, stabilized, mapping);
+        if (centered === 0) {
+          return;
+        }
+        this._applyImpulse(mapping.bodyName, mapping.axis, centered * (mapping.weight ?? 1));
       } else {
         this._applyTorque(mapping.bodyName, mapping.axis, stabilized, mapping, deltaSeconds);
       }
@@ -144,6 +150,7 @@ export class AudioDrivenRig {
     this._activityLevel = 0;
     this._activityDampingScale = 1;
     this._applyBodyDamping();
+    this._impulseCenter.clear();
   }
 
   dispose() {
@@ -197,6 +204,7 @@ export class AudioDrivenRig {
       this._activityLevel = 0;
       this.smoothingState.clear();
       this._driveHistory.clear();
+      this._impulseCenter.clear();
     }
   }
 
@@ -594,6 +602,17 @@ export class AudioDrivenRig {
     return hasBodiesBelowThreshold(this.world, this.bodiesByName, limit);
   }
 
+  _zeroCenterImpulse(key, value, mapping) {
+    if (!Number.isFinite(value)) {
+      return 0;
+    }
+    const neutral = Number.isFinite(mapping.neutral) ? mapping.neutral : null;
+    return this._impulseCenter.center(key, value, {
+      neutral,
+      deadzone: this._movementFloor * 0.5
+    });
+  }
+
   _bleedResidualMotion(forceResetPose = false) {
     if (!this.world) return;
     this._zeroBodyVelocities();
@@ -610,6 +629,7 @@ export class AudioDrivenRig {
       this.smoothingState.clear();
       this._driveHistory.clear();
       this._applyBodyDamping();
+      this._impulseCenter.clear();
     }
   }
 

@@ -104,3 +104,10 @@
 2025-11-15 - Rig jitter limiter
 - Added a per-mapping drive history with a delta-aware limiter in `AudioDrivenRig` so torque/impulse inputs ease between frames instead of snapping to analyser noise.
 - Reset the limiter alongside other smoothing state whenever playback stops or the rig respawns so the stabilizer never holds on to stale offsets.
+2025-11-15 - Impulse zero-centering helper
+- Added an `ImpulseZeroCenter` utility plus Jest coverage so impulse-driven mappings continuously subtract their running baselin
+es (or explicit neutral values) before hitting the rig.
+- Routed AudioDrivenRig impulse paths through the helper, clearing its state during resets/transport toggles so gravity finally
+ wins when the music stops.
+- Documented the new optional `neutral` schema property for presets so curated mappings can define their own baselines, then rer
+an `npm test` to confirm everything still passes.

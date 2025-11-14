@@ -156,6 +156,7 @@ export const JOINT_MAPPING_SCHEMA = {
   weight: { type: "number", default: 1 },
   damping: { type: "number", default: 0.5 },
   targetAngles: { type: "vec2?", description: "[min,max] radians" },
+  neutral: { type: "number?", description: "Baseline for impulse zero-centering" },
   scale: { type: "number", default: 1 },
   offset: { type: "number", default: 0 },
   min: { type: "number?", description: "Value clamp min" },
