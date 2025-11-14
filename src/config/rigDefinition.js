@@ -53,28 +53,6 @@ export const RIG_DEFINITION = {
       color: "#fde047"
     },
     {
-      name: "armLeft",
-      shape: "capsule",
-      size: { halfHeight: 0.2, radius: 0.1 },
-      translation: [-0.5, 1.75, 0],
-      initialRotation: { axis: [0, 0, 1], angle: 0.5 },
-      mass: 0.5,
-      linearDamping: 0.6,
-      angularDamping: 0.6,
-      color: "#38bdf8"
-    },
-    {
-      name: "armRight",
-      shape: "capsule",
-      size: { halfHeight: 0.2, radius: 0.1 },
-      translation: [0.5, 1.75, 0],
-      initialRotation: { axis: [0, 0, -1], angle: 0.5 },
-      mass: 0.5,
-      linearDamping: 0.6,
-      angularDamping: 0.6,
-      color: "#f472b6"
-    },
-    {
       name: "tailBase",
       shape: "capsule",
       size: { halfHeight: 0.25, radius: 0.12 },
@@ -93,26 +71,6 @@ export const RIG_DEFINITION = {
       linearDamping: 0.65,
       angularDamping: 0.65,
       color: "#22d3ee"
-    },
-    {
-      name: "orbitalLeft",
-      shape: "sphere",
-      size: { radius: 0.16 },
-      translation: [-0.9, 2.15, 0],
-      mass: 0.35,
-      linearDamping: 0.5,
-      angularDamping: 0.45,
-      color: "#c084fc"
-    },
-    {
-      name: "orbitalRight",
-      shape: "sphere",
-      size: { radius: 0.16 },
-      translation: [0.9, 2.15, 0],
-      mass: 0.35,
-      linearDamping: 0.5,
-      angularDamping: 0.45,
-      color: "#fb7185"
     }
   ],
   joints: [
@@ -181,50 +139,6 @@ export const RIG_DEFINITION = {
       limits: { swing: 0.6, twist: 0.35 },
       stiffness: 3,
       damping: 0.8
-    },
-    {
-      name: "spineMid_armLeft",
-      bodyA: "spineMid",
-      bodyB: "armLeft",
-      type: "spherical",
-      anchorA: [-0.15, 0.1, 0],
-      anchorB: [0, -0.2, 0],
-      limits: { swing: 0.65, twist: 0.5 },
-      stiffness: 2.4,
-      damping: 0.7
-    },
-    {
-      name: "spineMid_armRight",
-      bodyA: "spineMid",
-      bodyB: "armRight",
-      type: "spherical",
-      anchorA: [0.15, 0.1, 0],
-      anchorB: [0, -0.2, 0],
-      limits: { swing: 0.65, twist: 0.5 },
-      stiffness: 2.4,
-      damping: 0.7
-    },
-    {
-      name: "spineUpper_orbitalLeft",
-      bodyA: "spineUpper",
-      bodyB: "orbitalLeft",
-      type: "spherical",
-      anchorA: [-0.12, 0.15, 0],
-      anchorB: [0, 0, 0],
-      limits: { swing: 0.8, twist: 0.6 },
-      stiffness: 1.6,
-      damping: 0.6
-    },
-    {
-      name: "spineUpper_orbitalRight",
-      bodyA: "spineUpper",
-      bodyB: "orbitalRight",
-      type: "spherical",
-      anchorA: [0.12, 0.15, 0],
-      anchorB: [0, 0, 0],
-      limits: { swing: 0.8, twist: 0.6 },
-      stiffness: 1.6,
-      damping: 0.6
     }
   ]
 };
@@ -314,21 +228,6 @@ export const BASELINE_RIG_PRESET = {
       targetAngles: [-0.7, 0.7]
     },
     {
-      id: "crown-shimmer",
-      bodyName: "crown",
-      axis: [0, 0, 1],
-      mode: "torque",
-      jointName: "spineUpper_crown",
-      feature: { type: "centroid" },
-      scale: 1,
-      smoothing: 0.45,
-      min: 0,
-      max: 1,
-      weight: 2,
-      damping: 0.45,
-      targetAngles: [-0.5, 0.5]
-    },
-    {
       id: "tail-whip",
       bodyName: "tailTip",
       axis: [1, 0, 0],
@@ -342,36 +241,6 @@ export const BASELINE_RIG_PRESET = {
       weight: 2.6,
       damping: 0.5,
       targetAngles: [-0.8, 0.8]
-    },
-    {
-      id: "orbit-left",
-      bodyName: "orbitalLeft",
-      axis: [0, 0.6, 1],
-      mode: "torque",
-      jointName: "spineUpper_orbitalLeft",
-      feature: { type: "band", index: 4 },
-      scale: 1,
-      smoothing: 0.4,
-      min: -1,
-      max: 1,
-      weight: 1.6,
-      damping: 0.4,
-      targetAngles: [-0.9, 0.9]
-    },
-    {
-      id: "orbit-right",
-      bodyName: "orbitalRight",
-      axis: [0, 0.6, -1],
-      mode: "torque",
-      jointName: "spineUpper_orbitalRight",
-      feature: { type: "band", index: 4 },
-      scale: 1,
-      smoothing: 0.4,
-      min: -1,
-      max: 1,
-      weight: 1.6,
-      damping: 0.4,
-      targetAngles: [-0.9, 0.9]
     }
   ]
 };

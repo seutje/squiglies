@@ -89,3 +89,6 @@
 2025-11-15 - Normalized centroid/rolloff features
 - Normalized the spectral centroid and rolloff features to 0–1 inside AudioFeatureExtractor (while keeping Hz readouts for the GUI) so presets can treat them like other normalized signals.
 - Updated the AudioDrivenRig feature resolver, feature monitor panel, and accompanying Jest coverage to consume the normalized values.
+2025-11-15 - Simplified rig silhouette
+- Removed the articulated arm bodies and their spherical joints from `rigDefinition.js` to keep the physics rig closer to the core spine/tail/orbital forms requested for this pass.
+- Re-ran the Jest suite (`npm test`) to confirm PresetManager and other modules continue to pass without the removed bodies.
