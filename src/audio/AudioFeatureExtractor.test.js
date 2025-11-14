@@ -63,8 +63,7 @@ describe("AudioFeatureExtractor", () => {
     const extractor = new AudioFeatureExtractor({
       audioContext: context,
       analyserNode: analyser,
-      bandDefinitions,
-      featureSmoothing: 0
+      bandDefinitions
     });
 
     const frame = extractor.update();
@@ -98,7 +97,7 @@ describe("AudioFeatureExtractor", () => {
     expect(frame.energy).toBeCloseTo(totalEnergy / normalizedFreq.length, 5);
   });
 
-  test("applies smoothing across frames", () => {
+  test("reports raw frame data without smoothing", () => {
     const silent = new Array(fftSize).fill(128);
     const loud = [0, 255, 0, 255, 0, 255, 0, 255];
     const frequencySilent = new Array(fftSize / 2).fill(0);
@@ -110,7 +109,6 @@ describe("AudioFeatureExtractor", () => {
     const extractor = new AudioFeatureExtractor({
       audioContext: context,
       analyserNode: analyser,
-      featureSmoothing: 0.5,
       bandDefinitions: DEFAULT_BAND_DEFINITIONS.slice(0, 2)
     });
 
@@ -122,9 +120,8 @@ describe("AudioFeatureExtractor", () => {
     const rawLoudRms = computeRmsFromBytes(Uint8Array.from(loud));
 
     expect(first.rms).toBeCloseTo(0, 5);
-    expect(second.rms).toBeGreaterThan(first.rms);
-    expect(second.rms).toBeLessThan(rawLoudRms);
-    expect(second.energy).toBeLessThan(1);
+    expect(second.rms).toBeCloseTo(rawLoudRms, 5);
+    expect(second.energy).toBeCloseTo(1, 5);
   });
 
   test("exposes fast activity gating so silence settles quickly", () => {
@@ -138,7 +135,6 @@ describe("AudioFeatureExtractor", () => {
     const extractor = new AudioFeatureExtractor({
       audioContext: context,
       analyserNode: analyser,
-      featureSmoothing: 0.75,
       silenceGate: {
         floorRms: 0.002,
         ceilingRms: 0.02,

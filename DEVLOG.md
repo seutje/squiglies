@@ -83,3 +83,6 @@
 2025-11-15 - Audio feature monitor panel
 - Added a dedicated lil-gui panel on the left edge of the scene that subscribes to App’s audio feature stream and surfaces RMS, peak, centroid, rolloff, and per-band energies in real time.
 - Hooked the panel into the analyser initialization so band labels follow the current extractor configuration, then ran `npm test` to confirm nothing regressed.
+2025-11-15 - Raw analyser frames
+- Removed the feature-level smoothing logic from AudioFeatureExtractor so presets receive the analyser’s instantaneous RMS, band, centroid, rolloff, and energy data with no artificial lag.
+- Updated the corresponding Jest coverage and App bootstrap path, then re-ran `npm test` to verify the analyser + preset suites still pass.

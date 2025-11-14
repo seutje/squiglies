@@ -24,7 +24,6 @@ export class AudioFeatureExtractor {
     fftSize = 2048,
     bandDefinitions = DEFAULT_BAND_DEFINITIONS,
     rolloffPercent = 0.85,
-    featureSmoothing = 0.65,
     silenceGate = DEFAULT_SILENCE_GATE
   }) {
     if (!audioContext) {
@@ -49,7 +48,6 @@ export class AudioFeatureExtractor {
     this.timeDomainData = new Uint8Array(this.fftSize);
     this.bandDefinitions = this._normalizeBands(bandDefinitions);
     this.rolloffPercent = clamp(rolloffPercent, 0, 1);
-    this.featureSmoothing = clamp(featureSmoothing, 0, 0.99);
     this._latestFrame = null;
     this.silenceGate = this._normalizeSilenceGate(silenceGate);
     this._activityLevel = 0;
@@ -94,19 +92,15 @@ export class AudioFeatureExtractor {
     const timestamp = typeof performance !== "undefined" ? performance.now() : Date.now();
     const activity = this._updateActivityLevel(rmsResult.rms);
 
-    const previous = this._latestFrame;
     const frame = {
       timestamp,
-      rms: previous ? smoothValue(previous.rms, rmsResult.rms, this.featureSmoothing) : rmsResult.rms,
+      rms: rmsResult.rms,
       peak: rmsResult.peak,
-      bands: bands.map((value, index) => {
-        const previousValue = previous?.bands?.[index];
-        return previous ? smoothValue(previousValue, value, this.featureSmoothing) : value;
-      }),
+      bands,
       bandLabels: this.bandDefinitions.map((band) => band.label),
-      centroid: previous ? smoothValue(previous.centroid, centroid, this.featureSmoothing) : centroid,
-      rolloff: previous ? smoothValue(previous.rolloff, rolloff, this.featureSmoothing) : rolloff,
-      energy: previous ? smoothValue(previous.energy, averageEnergy, this.featureSmoothing) : averageEnergy,
+      centroid,
+      rolloff,
+      energy: averageEnergy,
       activity
     };
     const isActive = activity >= this.silenceGate.activationThreshold;

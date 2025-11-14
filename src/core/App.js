@@ -245,8 +245,7 @@ export class App {
     try {
       const audioContext = await this.audioManager.getAudioContext();
       this.audioFeatureExtractor = new AudioFeatureExtractor({
-        audioContext,
-        featureSmoothing: 0.6
+        audioContext
       });
       this.audioManager.setFeatureExtractor(this.audioFeatureExtractor);
       const labels = this.audioFeatureExtractor?.bandDefinitions?.map((band) => band.label) ?? [];
