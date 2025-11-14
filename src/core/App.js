@@ -9,6 +9,7 @@ import { TransportControls } from "../ui/TransportControls.js";
 import { PresetManager } from "../config/PresetManager.js";
 import { UIController } from "../ui/UIController.js";
 import { PerformanceMonitor } from "../utils/PerformanceMonitor.js";
+import { FeaturePanel } from "../ui/FeaturePanel.js";
 
 export class App {
   constructor({ visualizerContainer, controlsRoot }) {
@@ -39,6 +40,7 @@ export class App {
     this._featureAccumulator = 0;
     this._fftTier = "high";
     this._audioPlaybackActive = false;
+    this.featurePanel = null;
   }
 
   async init() {
@@ -182,6 +184,12 @@ export class App {
     });
     this.uiController.init();
 
+    this.featurePanel = new FeaturePanel({
+      container: this.visualizerContainer,
+      featureSource: this
+    });
+    this.featurePanel.init();
+
     try {
       const defaultTrack = await this.audioManager.initDefaultTrack();
       if (defaultTrack?.id) {
@@ -241,6 +249,8 @@ export class App {
         featureSmoothing: 0.6
       });
       this.audioManager.setFeatureExtractor(this.audioFeatureExtractor);
+      const labels = this.audioFeatureExtractor?.bandDefinitions?.map((band) => band.label) ?? [];
+      this.featurePanel?.setBandLabels(labels);
     } catch (error) {
       console.warn("Audio feature extractor unavailable", error);
     }

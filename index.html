@@ -56,12 +56,31 @@
         z-index: 20;
       }
 
+      .visualizer-feature-panel {
+        position: absolute;
+        top: 1.25rem;
+        left: 1.25rem;
+        z-index: 20;
+      }
+
       .visualizer-gui-overlay .lil-gui {
         pointer-events: auto;
         background: rgba(6, 10, 20, 0.92);
         border: 1px solid rgba(148, 163, 184, 0.35);
         border-radius: 0.4rem;
         box-shadow: 0 20px 45px rgba(2, 6, 23, 0.45);
+      }
+
+      .visualizer-feature-panel .lil-gui {
+        pointer-events: auto;
+        background: rgba(6, 10, 20, 0.92);
+        border: 1px solid rgba(94, 234, 212, 0.35);
+        border-radius: 0.4rem;
+        box-shadow: 0 20px 45px rgba(2, 6, 23, 0.45);
+      }
+
+      .visualizer-feature-panel .lil-gui .controller {
+        color: #e0f2fe;
       }
 
       .visualizer-gui-overlay .lil-gui .controller {

@@ -80,3 +80,6 @@
 2025-11-15 - Mapping panel sync
 - Fixed the lil-gui synchronization path so dropdowns/sliders update even when their backing values change programmatically, letting the Feature/Drive controls follow whichever mapping is selected.
 - Verified the regression fix by running the full Jest suite (`npm test`).
+2025-11-15 - Audio feature monitor panel
+- Added a dedicated lil-gui panel on the left edge of the scene that subscribes to App’s audio feature stream and surfaces RMS, peak, centroid, rolloff, and per-band energies in real time.
+- Hooked the panel into the analyser initialization so band labels follow the current extractor configuration, then ran `npm test` to confirm nothing regressed.
