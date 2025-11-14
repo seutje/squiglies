@@ -101,3 +101,6 @@
 2025-11-15 - Softer audio drive response
 - Introduced a rig-wide drive attenuation multiplier and lowered the default drive intensity so impulses/torque from audio features stay more subtle even when presets run at their previous stiffness levels.
 - Dropped the lil-gui “Rig drive” slider floor plus all preset/default stiffness values to keep newly generated and bundled presets in the calmer response range, then re-ran `npm test` to confirm everything still passes.
+2025-11-15 - Rig jitter limiter
+- Added a per-mapping drive history with a delta-aware limiter in `AudioDrivenRig` so torque/impulse inputs ease between frames instead of snapping to analyser noise.
+- Reset the limiter alongside other smoothing state whenever playback stops or the rig respawns so the stabilizer never holds on to stale offsets.

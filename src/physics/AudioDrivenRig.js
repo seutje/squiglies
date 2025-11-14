@@ -23,6 +23,7 @@ export class AudioDrivenRig {
     this.meshesByHandle = new Map();
     this.initialStates = new Map();
     this.smoothingState = new Map();
+    this._driveHistory = new Map();
     this._bodyConfigs = new Map();
 
     this._currentPreset = BASELINE_RIG_PRESET;
@@ -32,8 +33,8 @@ export class AudioDrivenRig {
     this._maxTorque = 10;
     this._maxTargetAngle = Math.PI * 0.65;
     this._driveAttenuation = 0.6;
-    this.driveIntensity = 0.7;
-    this.dampingMultiplier = 1;
+    this.driveIntensity = 0.02;
+    this.dampingMultiplier = 2;
     this._activityLevel = 0;
     this._activitySmoothing = { attack: 0.4, release: 0.08 };
     this._fallbackActivityRange = { min: 0.02, max: 0.12 };
@@ -43,6 +44,10 @@ export class AudioDrivenRig {
     this._playbackActive = false;
     this._frameActivationThreshold = 0.12;
     this._respawnThresholdY = DEFAULT_RESPAWN_THRESHOLD;
+    this._driveLimiter = {
+      maxDeltaPerSecond: 0.2,
+      minDeltaSeconds: 1 / 240
+    };
   }
 
   init() {
@@ -94,19 +99,17 @@ export class AudioDrivenRig {
       const gatedValue = this._applyActivityGate(drivenValue);
       if (!Number.isFinite(gatedValue)) return;
 
-      const smoothed = this._smoothMappingValue(
-        mapping.id ?? mapping.jointName ?? mapping.bodyName,
-        gatedValue,
-        mapping.smoothing
-      );
-      if (smoothed === 0) {
+      const mappingKey = mapping.id ?? mapping.jointName ?? mapping.bodyName;
+      const smoothed = this._smoothMappingValue(mappingKey, gatedValue, mapping.smoothing);
+      const stabilized = this._stabilizeDriveValue(mappingKey, smoothed, deltaSeconds);
+      if (stabilized === 0) {
         return;
       }
 
       if (mapping.mode === "impulse") {
-        this._applyImpulse(mapping.bodyName, mapping.axis, smoothed * (mapping.weight ?? 1));
+        this._applyImpulse(mapping.bodyName, mapping.axis, stabilized * (mapping.weight ?? 1));
       } else {
-        this._applyTorque(mapping.bodyName, mapping.axis, smoothed, mapping, deltaSeconds);
+        this._applyTorque(mapping.bodyName, mapping.axis, stabilized, mapping, deltaSeconds);
       }
     });
   }
@@ -137,6 +140,7 @@ export class AudioDrivenRig {
       body.setAngvel(new this.RAPIER.Vector3(0, 0, 0), true);
     });
     this.smoothingState.clear();
+    this._driveHistory.clear();
     this._activityLevel = 0;
     this._activityDampingScale = 1;
     this._applyBodyDamping();
@@ -155,6 +159,7 @@ export class AudioDrivenRig {
     this.jointsByName.clear();
     this.initialStates.clear();
     this.smoothingState.clear();
+    this._driveHistory.clear();
     this._bodyConfigs.clear();
     if (this._meshGroup.parent) {
       this._meshGroup.parent.remove(this._meshGroup);
@@ -191,6 +196,7 @@ export class AudioDrivenRig {
     } else {
       this._activityLevel = 0;
       this.smoothingState.clear();
+      this._driveHistory.clear();
     }
   }
 
@@ -202,10 +208,10 @@ export class AudioDrivenRig {
         translation: bodyDef.translation.slice(),
         rotation: this._getInitialRotation(bodyDef)
       });
-       this._bodyConfigs.set(bodyDef.name, {
-         linearDamping: bodyDef.linearDamping ?? 0.5,
-         angularDamping: bodyDef.angularDamping ?? 0.5
-       });
+      this._bodyConfigs.set(bodyDef.name, {
+        linearDamping: bodyDef.linearDamping ?? 0.5,
+        angularDamping: bodyDef.angularDamping ?? 0.5
+      });
       const mesh = this._createMesh(bodyDef);
       this.meshesByHandle.set(body.handle, mesh);
       this._meshGroup.add(mesh);
@@ -396,6 +402,32 @@ export class AudioDrivenRig {
     return flattened;
   }
 
+  _stabilizeDriveValue(key, value, deltaSeconds = 0) {
+    if (!Number.isFinite(value)) {
+      return 0;
+    }
+    if (value === 0) {
+      this._driveHistory.set(key, 0);
+      return 0;
+    }
+    const previous = this._driveHistory.get(key);
+    if (previous === undefined) {
+      this._driveHistory.set(key, value);
+      return value;
+    }
+    const dt = Math.max(deltaSeconds || 0, this._driveLimiter.minDeltaSeconds);
+    const maxDelta = this._driveLimiter.maxDeltaPerSecond * dt;
+    if (maxDelta <= 0) {
+      this._driveHistory.set(key, value);
+      return value;
+    }
+    const delta = clamp(value - previous, -maxDelta, maxDelta);
+    const next = previous + delta;
+    const stabilized = Math.abs(next) < this._movementFloor ? 0 : next;
+    this._driveHistory.set(key, stabilized);
+    return stabilized;
+  }
+
   _applyImpulse(bodyName, axis, magnitude) {
     const body = this._getBody(bodyName);
     if (!body) return;
@@ -576,6 +608,7 @@ export class AudioDrivenRig {
         );
       });
       this.smoothingState.clear();
+      this._driveHistory.clear();
       this._applyBodyDamping();
     }
   }
