@@ -291,17 +291,25 @@ export class PresetManager extends EventTarget {
   _buildTrackPresetUrl(track) {
     if (!track) return null;
     if (typeof track === "string") {
-      return `${this.presetBasePath}/${track}.json`;
+      return this._appendCacheBust(`${this.presetBasePath}/${track}.json`);
     }
     if (track.presetFile) {
-      return `${this.presetBasePath}/${track.presetFile}`;
+      return this._appendCacheBust(`${this.presetBasePath}/${track.presetFile}`);
     }
     if (track.filename && track.filename.endsWith(".json")) {
-      return `${this.presetBasePath}/${track.filename}`;
+      return this._appendCacheBust(`${this.presetBasePath}/${track.filename}`);
     }
     const slug = track.id ?? track.trackId;
     if (!slug) return null;
-    return `${this.presetBasePath}/${slug}.json`;
+    return this._appendCacheBust(`${this.presetBasePath}/${slug}.json`);
+  }
+
+  _appendCacheBust(url) {
+    if (!url) return url;
+    const delimiter = url.includes("?") ? "&" : "?";
+    const hasCryptoUUID = typeof crypto === "object" && typeof crypto.randomUUID === "function";
+    const token = hasCryptoUUID ? crypto.randomUUID() : `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
+    return `${url}${delimiter}cb=${token}`;
   }
 
   _cloneAndNormalizePreset(rawPreset, overrideTrackId = null) {

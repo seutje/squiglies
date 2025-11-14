@@ -74,3 +74,6 @@
 2025-11-15 - Preset mapping controls
 - Added a mappings folder to the lil-gui overlay with live dropdowns/sliders for every mapping parameter so the current preset routing is visible at a glance.
 - Wired those controls back into PresetManager updates (feature type/index, axis, scale, clamps, target angles, etc.) so edits immediately persist like the other physics tuning knobs.
+2025-11-15 - Preset cache busting
+- Added cache-busting tokens to every track preset JSON URL so browsers always fetch the latest file instead of serving a stale cached copy.
+- Ensured the helper works for all preset path variants (explicit filename, slug, or custom file) without impacting other PresetManager APIs.
