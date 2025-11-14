@@ -1,7 +1,26 @@
 {
-  "id": "trask01-default",
-  "name": "Track 01 Rig Mapping",
-  "description": "Default mapping proving audio → physics loop",
+  "id": "track01-default",
+  "name": "Shiny City Flux",
+  "description": "Airy shimmer variation tuned for the wide stereo swells in Shiny City.",
+  "trackId": "track01",
+  "physics": {
+    "gravity": [
+      0,
+      -9.81,
+      0
+    ],
+    "damping": 0.58,
+    "stiffness": 0.72
+  },
+  "rendering": {
+    "backgroundColor": "#040c1a",
+    "colorPalette": [
+      "#22d3ee",
+      "#a855f7",
+      "#fde047"
+    ],
+    "bloom": true
+  },
   "mappings": [
     {
       "id": "core-pulse",
@@ -13,16 +32,15 @@
       ],
       "mode": "impulse",
       "feature": {
-        "type": "energy",
-        "index": 5
+        "type": "rms"
       },
-      "scale": 1.05,
+      "scale": 1.1,
       "offset": 0,
-      "smoothing": 0,
+      "smoothing": 0.32,
       "min": 0,
       "max": 1,
-      "weight": 9.8,
-      "damping": 1.25
+      "weight": 1.45,
+      "damping": 0.12
     },
     {
       "id": "bass-sway",
@@ -36,18 +54,18 @@
       "jointName": "core_spineLower",
       "feature": {
         "type": "band",
-        "index": 5
+        "index": 2
       },
-      "scale": 1,
+      "scale": 1.05,
       "offset": 0,
-      "smoothing": 0.5,
+      "smoothing": 0.48,
       "min": -1,
       "max": 1,
-      "weight": 4.8,
-      "damping": 0.7,
+      "weight": 5.2,
+      "damping": 0.68,
       "targetAngles": [
-        -0.55,
-        0.55
+        -0.62,
+        0.62
       ]
     },
     {
@@ -62,37 +80,68 @@
       "jointName": "spineLower_spineMid",
       "feature": {
         "type": "band",
-        "index": 5
+        "index": 3
       },
-      "scale": 1,
-      "smoothing": 0.55,
+      "scale": 0.18,
+      "smoothing": 0.6,
       "min": -1,
       "max": 1,
-      "weight": 3.4,
-      "damping": 0.6,
+      "weight": 0.9,
+      "damping": 0.72,
       "targetAngles": [
-        -0.4,
-        0.4
+        -0.28,
+        0.28
+      ]
+    },
+    {
+      "id": "treble-twist",
+      "bodyName": "spineUpper",
+      "axis": [
+        0,
+        1,
+        0
+      ],
+      "mode": "torque",
+      "jointName": "spineMid_spineUpper",
+      "feature": {
+        "type": "band",
+        "index": 5
+      },
+      "scale": 1.05,
+      "smoothing": 0.33,
+      "min": -1,
+      "max": 1,
+      "weight": 2.9,
+      "damping": 0.48,
+      "targetAngles": [
+        -0.72,
+        0.72
+      ]
+    },
+    {
+      "id": "tail-whip",
+      "bodyName": "tailTip",
+      "axis": [
+        1,
+        0,
+        0
+      ],
+      "mode": "torque",
+      "jointName": "tailBase_tailTip",
+      "feature": {
+        "type": "band",
+        "index": 0
+      },
+      "scale": 0.24,
+      "smoothing": 0.68,
+      "min": -1,
+      "max": 1,
+      "weight": 0.45,
+      "damping": 0.82,
+      "targetAngles": [
+        -0.36,
+        0.36
       ]
     }
-  ],
-  "trackId": "track01",
-  "physics": {
-    "gravity": [
-      0,
-      -9.81,
-      0
-    ],
-    "damping": 0.6,
-    "stiffness": 0.7
-  },
-  "rendering": {
-    "backgroundColor": "#050505",
-    "bloom": false,
-    "colorPalette": [
-      "#0ea5e9",
-      "#a855f7",
-      "#f97316"
-    ]
-  }
+  ]
 }

@@ -1,37 +1,147 @@
 {
   "id": "track07-default",
-  "name": "Track 07 Placeholder",
-  "description": "Placeholder preset for bundled track 07. Replace once presets are authored.",
+  "name": "Bit by Bit Flutter",
+  "description": "Playful fluttering motion to mirror the chiptune energy in Bit by Bit.",
   "trackId": "track07",
   "physics": {
     "gravity": [
       0,
-      -9.81,
+      -9.4,
       0
     ],
     "damping": 0.5,
-    "stiffness": 0.7
+    "stiffness": 0.67
   },
   "rendering": {
-    "backgroundColor": "#050505",
+    "backgroundColor": "#031018",
     "colorPalette": [
-      "#0ea5e9",
+      "#38bdf8",
       "#a855f7",
-      "#f97316"
-    ]
+      "#f43f5e"
+    ],
+    "bloom": true
   },
   "mappings": [
     {
-      "jointName": "core",
+      "id": "core-pulse",
+      "bodyName": "core",
+      "axis": [
+        0,
+        1,
+        0
+      ],
+      "mode": "impulse",
       "feature": {
         "type": "rms"
       },
-      "scale": 1.0,
+      "scale": 1.15,
       "offset": 0,
-      "smoothing": 0.5,
+      "smoothing": 0.3,
+      "min": 0,
+      "max": 1,
+      "weight": 1.5,
+      "damping": 0.1
+    },
+    {
+      "id": "bass-sway",
+      "bodyName": "spineLower",
+      "axis": [
+        0,
+        0,
+        1
+      ],
       "mode": "torque",
+      "jointName": "core_spineLower",
+      "feature": {
+        "type": "band",
+        "index": 2
+      },
+      "scale": 1.05,
+      "offset": 0,
+      "smoothing": 0.46,
       "min": -1,
-      "max": 1
+      "max": 1,
+      "weight": 5,
+      "damping": 0.66,
+      "targetAngles": [
+        -0.62,
+        0.62
+      ]
+    },
+    {
+      "id": "mid-spiral",
+      "bodyName": "spineMid",
+      "axis": [
+        1,
+        0,
+        0
+      ],
+      "mode": "torque",
+      "jointName": "spineLower_spineMid",
+      "feature": {
+        "type": "band",
+        "index": 4
+      },
+      "scale": 0.18,
+      "smoothing": 0.55,
+      "min": -1,
+      "max": 1,
+      "weight": 0.92,
+      "damping": 0.68,
+      "targetAngles": [
+        -0.29,
+        0.29
+      ]
+    },
+    {
+      "id": "treble-twist",
+      "bodyName": "spineUpper",
+      "axis": [
+        0,
+        1,
+        0
+      ],
+      "mode": "torque",
+      "jointName": "spineMid_spineUpper",
+      "feature": {
+        "type": "band",
+        "index": 5
+      },
+      "scale": 1.2,
+      "smoothing": 0.29,
+      "min": -1,
+      "max": 1,
+      "weight": 3.2,
+      "damping": 0.44,
+      "targetAngles": [
+        -0.78,
+        0.78
+      ]
+    },
+    {
+      "id": "tail-whip",
+      "bodyName": "tailTip",
+      "axis": [
+        1,
+        0,
+        0.2
+      ],
+      "mode": "torque",
+      "jointName": "tailBase_tailTip",
+      "feature": {
+        "type": "band",
+        "index": 1
+      },
+      "scale": 0.25,
+      "smoothing": 0.62,
+      "min": -1,
+      "max": 1,
+      "weight": 0.48,
+      "damping": 0.74,
+      "targetAngles": [
+        -0.4,
+        0.4
+      ]
     }
   ]
 }

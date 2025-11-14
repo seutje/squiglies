@@ -1,37 +1,147 @@
 {
   "id": "track09-default",
-  "name": "Track 09 Placeholder",
-  "description": "Placeholder preset for bundled track 09. Replace once presets are authored.",
+  "name": "Grooving Out Orbit",
+  "description": "Balanced motion with a touch of bloom for Grooving Out's funk swing.",
   "trackId": "track09",
   "physics": {
     "gravity": [
       0,
-      -9.81,
+      -9.85,
       0
     ],
-    "damping": 0.5,
-    "stiffness": 0.7
+    "damping": 0.6,
+    "stiffness": 0.74
   },
   "rendering": {
-    "backgroundColor": "#050505",
+    "backgroundColor": "#06020a",
     "colorPalette": [
-      "#0ea5e9",
-      "#a855f7",
-      "#f97316"
-    ]
+      "#f43f5e",
+      "#fde047",
+      "#a78bfa"
+    ],
+    "bloom": true
   },
   "mappings": [
     {
-      "jointName": "core",
+      "id": "core-pulse",
+      "bodyName": "core",
+      "axis": [
+        0,
+        1,
+        0
+      ],
+      "mode": "impulse",
       "feature": {
         "type": "rms"
       },
-      "scale": 1.0,
+      "scale": 1.12,
+      "offset": 0,
+      "smoothing": 0.31,
+      "min": 0,
+      "max": 1,
+      "weight": 1.4,
+      "damping": 0.12
+    },
+    {
+      "id": "bass-sway",
+      "bodyName": "spineLower",
+      "axis": [
+        0,
+        0,
+        1
+      ],
+      "mode": "torque",
+      "jointName": "core_spineLower",
+      "feature": {
+        "type": "band",
+        "index": 2
+      },
+      "scale": 1.08,
       "offset": 0,
       "smoothing": 0.5,
-      "mode": "torque",
       "min": -1,
-      "max": 1
+      "max": 1,
+      "weight": 5.5,
+      "damping": 0.72,
+      "targetAngles": [
+        -0.59,
+        0.59
+      ]
+    },
+    {
+      "id": "mid-spiral",
+      "bodyName": "spineMid",
+      "axis": [
+        1,
+        0,
+        0
+      ],
+      "mode": "torque",
+      "jointName": "spineLower_spineMid",
+      "feature": {
+        "type": "band",
+        "index": 3
+      },
+      "scale": 0.16,
+      "smoothing": 0.6,
+      "min": -1,
+      "max": 1,
+      "weight": 0.95,
+      "damping": 0.7,
+      "targetAngles": [
+        -0.27,
+        0.27
+      ]
+    },
+    {
+      "id": "treble-twist",
+      "bodyName": "spineUpper",
+      "axis": [
+        0,
+        1,
+        0
+      ],
+      "mode": "torque",
+      "jointName": "spineMid_spineUpper",
+      "feature": {
+        "type": "band",
+        "index": 5
+      },
+      "scale": 1.05,
+      "smoothing": 0.34,
+      "min": -1,
+      "max": 1,
+      "weight": 2.7,
+      "damping": 0.5,
+      "targetAngles": [
+        -0.72,
+        0.72
+      ]
+    },
+    {
+      "id": "tail-whip",
+      "bodyName": "tailTip",
+      "axis": [
+        1,
+        0,
+        0
+      ],
+      "mode": "torque",
+      "jointName": "tailBase_tailTip",
+      "feature": {
+        "type": "band",
+        "index": 1
+      },
+      "scale": 0.21,
+      "smoothing": 0.66,
+      "min": -1,
+      "max": 1,
+      "weight": 0.46,
+      "damping": 0.78,
+      "targetAngles": [
+        -0.34,
+        0.34
+      ]
     }
   ]
 }

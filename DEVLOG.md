@@ -114,3 +114,6 @@ an `npm test` to confirm everything still passes.
 2025-11-16 - Softer baseline spine + tail mappings
 - Dialed back the baseline preset's mid-spiral torque and tail whip drive (lower scale/weight, tighter target angles, heavier damping) so the rig sways smoothly instead of snapping when those bands spike.
 - Re-ran the Jest suite (`npm test`) to ensure the preset schema + helpers still behave as expected.
+2025-11-16 - Curated per-track presets
+- Regenerated every bundled track preset from the baseline rig mapping with track-specific tweaks (physics, rendering palettes, and mapping weights/bands) so each song now feels distinct while staying within the proven schema.
+- Updated PLAN.md to mark the preset curation task complete and ran `npm test` to verify the preset + config suites continue to pass.

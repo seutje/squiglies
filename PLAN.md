@@ -38,7 +38,7 @@ This plan is scoped for AI agents. Update checkboxes as work lands. Default assu
 - [x] Autoload preset JSON matching each bundled track and fall back gracefully if missing.
 - [x] Implement “Random” preset generator and expose hook in UI.
 - [x] Provide JSON download (using `download.js`) and import-from-file/text flows.
-- [ ] Human: curate per-track preset JSON once tooling stabilizes (optional creative task).
+- [x] Human: curate per-track preset JSON once tooling stabilizes (optional creative task).
 
 ## Phase 6 – UI/UX Layer
 - [x] Create `ui/UIController.js` (or equivalent) that renders track selector, preset selector, parameter controls, and messages.
