@@ -7,7 +7,6 @@ import { AudioManager } from "../audio/AudioManager.js";
 import { AudioFeatureExtractor } from "../audio/AudioFeatureExtractor.js";
 import { TransportControls } from "../ui/TransportControls.js";
 import { PresetManager } from "../config/PresetManager.js";
-import { PresetControls } from "../ui/PresetControls.js";
 import { UIController } from "../ui/UIController.js";
 import { PerformanceMonitor } from "../utils/PerformanceMonitor.js";
 
@@ -31,7 +30,6 @@ export class App {
     this.audioFeatureExtractor = null;
     this.transportControls = null;
     this.presetManager = null;
-    this.presetControls = null;
     this.uiController = null;
     this._isInitialized = false;
     this._featureSubscribers = new Set();
@@ -160,13 +158,6 @@ export class App {
     });
     this.transportControls.init();
 
-    const presetRoot = this._resolvePresetRoot();
-    this.presetControls = new PresetControls({
-      rootElement: presetRoot,
-      presetManager: this.presetManager
-    });
-    this.presetControls.init();
-
     const trackRoot = this._resolveTrackRoot();
     this.uiController = new UIController({
       rootElement: trackRoot,
@@ -193,17 +184,6 @@ export class App {
     }
     const target =
       this.controlsRoot.querySelector("[data-ui='transport']") ?? this.controlsRoot;
-    return target;
-  }
-
-  _resolvePresetRoot() {
-    if (!this.controlsRoot) {
-      throw new Error("Controls root not found");
-    }
-    const target = this.controlsRoot.querySelector("[data-ui='presets']");
-    if (!target) {
-      throw new Error("Preset controls root not found");
-    }
     return target;
   }
 

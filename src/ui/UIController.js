@@ -1,3 +1,5 @@
+import GUI from "lil-gui";
+
 const STATUS_VARIANTS = {
   INFO: "info",
   SUCCESS: "success",
@@ -11,6 +13,10 @@ const PARAM_DEFAULTS = {
   stiffness: 1
 };
 
+const GUI_DEFAULTS = {
+  backgroundColor: "#050505"
+};
+
 export class UIController {
   constructor({ rootElement, audioManager, presetManager, trackRegistry }) {
     this.rootElement = rootElement;
@@ -19,20 +25,35 @@ export class UIController {
     this.trackRegistry = trackRegistry;
 
     this.elements = {};
+    this.gui = null;
+    this.guiControllers = {};
+    this.guiRootElement = null;
+    this.guiElements = {};
+    this.guiState = {
+      preset: "",
+      gravity: PARAM_DEFAULTS.gravity,
+      stiffness: PARAM_DEFAULTS.stiffness,
+      damping: PARAM_DEFAULTS.damping,
+      backgroundColor: GUI_DEFAULTS.backgroundColor,
+      status: ""
+    };
+    this._isGuiUpdating = false;
     this._knownTrackIds = new Set();
 
     this._handlers = {
       onTrackSelect: (event) => this._handleTrackSelect(event),
       onFileInput: (event) => this._handleFileInput(event),
-      onPresetSelect: (event) => this._handlePresetSelect(event),
-      onParameterInput: (event) => this._handleParameterInput(event),
-      onColorChange: (event) => this._handleColorChange(event),
       onAudioTrackChange: (event) => this._syncTrackState(event.detail?.track),
       onAudioError: (event) =>
         this._setStatus(event.detail?.message ?? "Audio error", STATUS_VARIANTS.ERROR),
       onAudioMessage: (event) => this._handleAudioMessage(event.detail?.message ?? ""),
       onPresetChange: (event) => this._syncPresetState(event.detail?.preset),
-      onPresetRegistered: () => this._populatePresetOptions()
+      onPresetRegistered: () => this._populatePresetOptions(),
+      onGuiRandom: () => this._handleRandomPreset(),
+      onGuiExport: () => this._handleExportPreset(),
+      onGuiDownload: () => this._handleDownloadPreset(),
+      onGuiImportText: () => this._handleImportPresetFromText(),
+      onGuiFileChange: (event) => this._handlePresetFileInput(event)
     };
   }
 
@@ -51,6 +72,9 @@ export class UIController {
     this._cacheElements();
     this._bindDomEvents();
     this._bindDataSources();
+    this._createGuiOverlay();
+    this._buildGuiControllers();
+    this._buildGuiTools();
     this._populateTrackOptions();
     this._populatePresetOptions();
     this._syncTrackState(this.audioManager.getCurrentTrack());
@@ -68,42 +92,6 @@ export class UIController {
           <span>Upload audio file</span>
           <input type="file" class="track-upload-input" accept="audio/*" />
         </label>
-
-        <label class="control-label" for="preset-select">Presets</label>
-        <select class="preset-select" id="preset-select">
-          <option value="">Select a preset…</option>
-        </select>
-
-        <div class="parameter-controls">
-          <div class="parameter-control" data-param-control="gravity">
-            <div class="parameter-head">
-              <span>Gravity</span>
-              <span class="parameter-value" data-param-value="gravity">${PARAM_DEFAULTS.gravity.toFixed(1)}</span>
-            </div>
-            <input type="range" min="-30" max="-2" step="0.1" value="${PARAM_DEFAULTS.gravity}" />
-          </div>
-          <div class="parameter-control" data-param-control="stiffness">
-            <div class="parameter-head">
-              <span>Rig drive</span>
-              <span class="parameter-value" data-param-value="stiffness">${PARAM_DEFAULTS.stiffness.toFixed(2)}</span>
-            </div>
-            <input type="range" min="0.25" max="2" step="0.05" value="${PARAM_DEFAULTS.stiffness}" />
-          </div>
-          <div class="parameter-control" data-param-control="damping">
-            <div class="parameter-head">
-              <span>Rig damping</span>
-              <span class="parameter-value" data-param-value="damping">${PARAM_DEFAULTS.damping.toFixed(2)}</span>
-            </div>
-            <input type="range" min="0.2" max="1.5" step="0.05" value="${PARAM_DEFAULTS.damping}" />
-          </div>
-        </div>
-
-        <label class="color-control">
-          <span>Background</span>
-          <input type="color" class="background-input" value="#050505" />
-        </label>
-
-        <div class="ui-status" aria-live="polite"></div>
       </div>
     `;
   }
@@ -111,23 +99,11 @@ export class UIController {
   _cacheElements() {
     this.elements.trackSelect = this.rootElement.querySelector(".track-select");
     this.elements.fileInput = this.rootElement.querySelector(".track-upload-input");
-    this.elements.presetSelect = this.rootElement.querySelector(".preset-select");
-    this.elements.paramControls = this.rootElement.querySelectorAll("[data-param-control]");
-    this.elements.status = this.rootElement.querySelector(".ui-status");
-    this.elements.backgroundInput = this.rootElement.querySelector(".background-input");
   }
 
   _bindDomEvents() {
     this.elements.trackSelect?.addEventListener("change", this._handlers.onTrackSelect);
     this.elements.fileInput?.addEventListener("change", this._handlers.onFileInput);
-    this.elements.presetSelect?.addEventListener("change", this._handlers.onPresetSelect);
-    this.elements.backgroundInput?.addEventListener("input", this._handlers.onColorChange);
-    this.elements.paramControls?.forEach((control) => {
-      const input = control.querySelector("input[type='range']");
-      if (input) {
-        input.addEventListener("input", this._handlers.onParameterInput);
-      }
-    });
   }
 
   _bindDataSources() {
@@ -150,25 +126,18 @@ export class UIController {
   }
 
   _populatePresetOptions() {
-    if (!this.elements.presetSelect) return;
-    const currentValue = this.elements.presetSelect.value;
-    const summaries =
-      this.presetManager?.listPresetSummaries?.() ?? [];
-    this.elements.presetSelect.innerHTML = '<option value="">Select a preset…</option>';
+    const controller = this.guiControllers.preset;
+    if (!controller) return;
+    const summaries = this.presetManager?.listPresetSummaries?.() ?? [];
+    const options = {};
     summaries.forEach((preset) => {
-      const option = document.createElement("option");
-      option.value = preset.id;
       const trackSuffix = preset.trackId ? ` – ${preset.trackId}` : "";
-      option.textContent = `${preset.name}${trackSuffix}`;
-      this.elements.presetSelect.appendChild(option);
+      options[`${preset.name}${trackSuffix}`] = preset.id;
     });
-    if (currentValue && this.elements.presetSelect.querySelector(`option[value="${currentValue}"]`)) {
-      this.elements.presetSelect.value = currentValue;
-    } else {
-      const activeId = this.presetManager?.getCurrentPreset()?.id;
-      if (activeId) {
-        this.elements.presetSelect.value = activeId;
-      }
+    controller.options(options);
+    const activeId = this.presetManager?.getCurrentPreset()?.id ?? "";
+    if (activeId) {
+      this._setGuiValue("preset", activeId);
     }
   }
 
@@ -203,27 +172,26 @@ export class UIController {
       });
   }
 
-  _handlePresetSelect(event) {
-    const presetId = event.target.value;
-    if (!presetId) return;
+  _handleAudioMessage(message) {
+    if (!message) return;
+    this._setStatus(message, STATUS_VARIANTS.INFO);
+  }
+
+  _handleGuiPresetSelect(presetId) {
+    if (!presetId || this._isGuiUpdating) return;
     const preset = this.presetManager.setCurrentPreset(presetId);
     if (preset) {
       this._setStatus(`Activated ${preset.name}`, STATUS_VARIANTS.INFO);
     }
   }
 
-  _handleParameterInput(event) {
-    const control = event.target.closest("[data-param-control]");
-    if (!control) return;
-    const key = control.getAttribute("data-param-control");
-    const value = parseFloat(event.target.value);
-    this._updateParameterDisplay(key, value);
+  _handleGuiParameterChange(key, value) {
+    if (this._isGuiUpdating) return;
     this._applyParameterChange(key, value);
   }
 
-  _handleColorChange(event) {
-    const value = event.target.value;
-    if (!value) return;
+  _handleGuiBackgroundChange(value) {
+    if (this._isGuiUpdating || !value) return;
     this._updatePreset((preset) => {
       preset.rendering = preset.rendering ?? {};
       preset.rendering.backgroundColor = value;
@@ -231,9 +199,168 @@ export class UIController {
     });
   }
 
-  _handleAudioMessage(message) {
-    if (!message) return;
-    this._setStatus(message, STATUS_VARIANTS.INFO);
+  _createGuiOverlay() {
+    if (this.gui) return;
+    const host = document.getElementById("visualizer-container") ?? document.body;
+    let container = host.querySelector(".visualizer-gui-overlay");
+    if (!container) {
+      container = document.createElement("div");
+      container.className = "visualizer-gui-overlay";
+      host.appendChild(container);
+    }
+    this.guiRootElement = container;
+    this.gui = new GUI({
+      container,
+      width: 320,
+      title: "Rig Controls"
+    });
+    this.gui.title("Rig Controls");
+  }
+
+  _buildGuiControllers() {
+    if (!this.gui) return;
+    const presetFolder = this.gui.addFolder("Presets");
+    this.guiControllers.preset = presetFolder
+      .add(this.guiState, "preset", {})
+      .name("Active preset")
+      .onChange((value) => this._handleGuiPresetSelect(value));
+    this.guiControllers.status = presetFolder
+      .add(this.guiState, "status")
+      .name("Status")
+      .listen();
+    this.guiControllers.status.disable?.();
+    presetFolder.open();
+
+    const physicsFolder = this.gui.addFolder("Physics");
+    this.guiControllers.gravity = physicsFolder
+      .add(this.guiState, "gravity", -30, -2, 0.1)
+      .name("Gravity (Y)")
+      .onChange((value) => this._handleGuiParameterChange("gravity", value));
+    this.guiControllers.stiffness = physicsFolder
+      .add(this.guiState, "stiffness", 0.25, 2, 0.05)
+      .name("Rig drive")
+      .onChange((value) => this._handleGuiParameterChange("stiffness", value));
+    this.guiControllers.damping = physicsFolder
+      .add(this.guiState, "damping", 0.2, 1.5, 0.05)
+      .name("Rig damping")
+      .onChange((value) => this._handleGuiParameterChange("damping", value));
+    physicsFolder.open();
+
+    const sceneFolder = this.gui.addFolder("Scene");
+    this.guiControllers.background = sceneFolder
+      .addColor(this.guiState, "backgroundColor")
+      .name("Background")
+      .onChange((value) => this._handleGuiBackgroundChange(value));
+    sceneFolder.open();
+  }
+
+  _buildGuiTools() {
+    if (!this.guiRootElement || this.guiElements.toolsRoot) return;
+    const container = document.createElement("div");
+    container.className = "gui-tools";
+    container.innerHTML = `
+      <div class="gui-tools-row">
+        <button type="button" data-role="random">Randomize</button>
+        <button type="button" data-role="export">Show JSON</button>
+        <button type="button" data-role="download">Download JSON</button>
+      </div>
+      <textarea class="gui-tools-textarea" rows="6" placeholder="Preset JSON will appear here when exported."></textarea>
+      <div class="gui-tools-row">
+        <button type="button" data-role="import-text">Import from text</button>
+        <button type="button" data-role="import-file">Import from file</button>
+        <input type="file" class="gui-tools-file" accept="application/json" />
+      </div>
+      <div class="gui-tools-status" aria-live="polite"></div>
+    `;
+    this.guiRootElement.appendChild(container);
+    this.guiElements.toolsRoot = container;
+    this.guiElements.textarea = container.querySelector(".gui-tools-textarea");
+    this.guiElements.message = container.querySelector(".gui-tools-status");
+    this.guiElements.fileInput = container.querySelector(".gui-tools-file");
+
+    container.querySelector('[data-role="random"]')?.addEventListener("click", this._handlers.onGuiRandom);
+    container.querySelector('[data-role="export"]')?.addEventListener("click", this._handlers.onGuiExport);
+    container.querySelector('[data-role="download"]')?.addEventListener("click", this._handlers.onGuiDownload);
+    container.querySelector('[data-role="import-text"]')?.addEventListener("click", this._handlers.onGuiImportText);
+    container.querySelector('[data-role="import-file"]')?.addEventListener("click", () => {
+      this.guiElements.fileInput?.click();
+    });
+    this.guiElements.fileInput?.addEventListener("change", this._handlers.onGuiFileChange);
+  }
+
+  _handleRandomPreset() {
+    try {
+      const preset = this.presetManager.generateRandomPreset({
+        trackId: this.presetManager.getActiveTrackId()
+      });
+      this._setToolMessage(`Generated ${preset.name}`, STATUS_VARIANTS.SUCCESS);
+    } catch (error) {
+      console.error("UIController: Failed to randomize preset", error);
+      this._setToolMessage("Unable to randomize preset", STATUS_VARIANTS.ERROR);
+    }
+  }
+
+  _handleExportPreset() {
+    try {
+      const json = this.presetManager.exportPreset();
+      if (this.guiElements.textarea) {
+        this.guiElements.textarea.value = json;
+        this.guiElements.textarea.focus();
+        this.guiElements.textarea.select?.();
+      }
+      this._setToolMessage("Preset JSON exported", STATUS_VARIANTS.INFO);
+    } catch (error) {
+      console.error("UIController: Failed to export preset", error);
+      this._setToolMessage("Unable to export preset", STATUS_VARIANTS.ERROR);
+    }
+  }
+
+  _handleDownloadPreset() {
+    try {
+      this.presetManager.downloadPreset();
+      this._setToolMessage("Preset download started", STATUS_VARIANTS.SUCCESS);
+    } catch (error) {
+      console.error("UIController: Failed to download preset", error);
+      this._setToolMessage("Unable to download preset", STATUS_VARIANTS.ERROR);
+    }
+  }
+
+  _handleImportPresetFromText() {
+    const value = this.guiElements.textarea?.value?.trim();
+    if (!value) {
+      this._setToolMessage("Paste preset JSON before importing", STATUS_VARIANTS.WARNING);
+      return;
+    }
+    try {
+      const preset = this.presetManager.importPresetFromJson(value, {
+        trackId: this.presetManager.getActiveTrackId(),
+        makeActive: true
+      });
+      this._setToolMessage(`Imported ${preset.name} from text`, STATUS_VARIANTS.SUCCESS);
+    } catch (error) {
+      console.error("UIController: Failed to import preset text", error);
+      this._setToolMessage(error?.message ?? "Invalid preset JSON", STATUS_VARIANTS.ERROR);
+    }
+  }
+
+  _handlePresetFileInput(event) {
+    const file = event?.target?.files?.[0];
+    if (!file) return;
+    this.presetManager
+      .importPresetFromFile(file, {
+        trackId: this.presetManager.getActiveTrackId(),
+        makeActive: true
+      })
+      .then((preset) => {
+        if (this.guiElements.fileInput) {
+          this.guiElements.fileInput.value = "";
+        }
+        this._setToolMessage(`Imported ${preset.name} from file`, STATUS_VARIANTS.SUCCESS);
+      })
+      .catch((error) => {
+        console.error("UIController: Failed to import preset file", error);
+        this._setToolMessage(error?.message ?? "Failed to import file", STATUS_VARIANTS.ERROR);
+      });
   }
 
   _applyParameterChange(key, value) {
@@ -288,34 +415,17 @@ export class UIController {
   }
 
   _syncPresetState(preset) {
-    if (!preset || !this.elements) return;
-    if (this.elements.presetSelect && preset.id) {
-      this.elements.presetSelect.value = preset.id;
+    if (!preset) return;
+    if (preset.id) {
+      this._setGuiValue("preset", preset.id);
     }
     const physics = preset.physics ?? {};
     const gravityY = Array.isArray(physics.gravity) ? physics.gravity[1] ?? PARAM_DEFAULTS.gravity : PARAM_DEFAULTS.gravity;
-    this._setSliderValue("gravity", gravityY);
-    this._setSliderValue("damping", physics.damping ?? PARAM_DEFAULTS.damping);
-    this._setSliderValue("stiffness", physics.stiffness ?? PARAM_DEFAULTS.stiffness);
-
-    if (this.elements.backgroundInput && preset.rendering?.backgroundColor) {
-      this.elements.backgroundInput.value = preset.rendering.backgroundColor;
-    }
-  }
-
-  _setSliderValue(key, value) {
-    const control = this.rootElement.querySelector(`[data-param-control="${key}"] input[type='range']`);
-    if (!control || !Number.isFinite(value)) return;
-    control.value = value;
-    this._updateParameterDisplay(key, value);
-  }
-
-  _updateParameterDisplay(key, value) {
-    if (!Number.isFinite(value)) return;
-    const display = this.rootElement.querySelector(`[data-param-value="${key}"]`);
-    if (!display) return;
-    const formatted = key === "gravity" ? value.toFixed(1) : value.toFixed(2);
-    display.textContent = formatted;
+    this._setGuiValue("gravity", gravityY);
+    this._setGuiValue("damping", physics.damping ?? PARAM_DEFAULTS.damping);
+    this._setGuiValue("stiffness", physics.stiffness ?? PARAM_DEFAULTS.stiffness);
+    const bg = preset.rendering?.backgroundColor ?? GUI_DEFAULTS.backgroundColor;
+    this._setGuiValue("backgroundColor", bg);
   }
 
   _ensureTrackOption(track) {
@@ -339,8 +449,25 @@ export class UIController {
   }
 
   _setStatus(message, variant = STATUS_VARIANTS.INFO) {
-    if (!this.elements.status) return;
-    this.elements.status.textContent = message ?? "";
-    this.elements.status.dataset.variant = message ? variant : "";
+    this._setGuiValue("status", message ?? "");
+    const statusController = this.guiControllers.status;
+    if (statusController?.domElement) {
+      statusController.domElement.dataset.variant = message ? variant : "";
+    }
+  }
+
+  _setToolMessage(message, variant = STATUS_VARIANTS.INFO) {
+    if (!this.guiElements.message) return;
+    this.guiElements.message.textContent = message ?? "";
+    this.guiElements.message.dataset.variant = message ? variant : "";
+  }
+
+  _setGuiValue(key, value) {
+    this.guiState[key] = value;
+    const controller = this.guiControllers[key];
+    if (!controller) return;
+    this._isGuiUpdating = true;
+    controller.setValue(value);
+    this._isGuiUpdating = false;
   }
 }

@@ -8,10 +8,12 @@
       {
         "imports": {
           "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-          "three/examples/jsm/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+          "three/examples/jsm/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
+          "lil-gui": "https://cdn.jsdelivr.net/npm/lil-gui@0.19/+esm"
         }
       }
     </script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lil-gui@0.19/dist/lil-gui.min.css" />
     <style>
       :root {
         color-scheme: dark;
@@ -45,6 +47,112 @@
         position: relative;
         overflow: hidden;
         background: rgba(17, 24, 39, 0.9);
+      }
+
+      .visualizer-gui-overlay {
+        position: absolute;
+        top: 1.25rem;
+        right: 1.25rem;
+        z-index: 20;
+        pointer-events: none;
+      }
+
+      .visualizer-gui-overlay .lil-gui {
+        pointer-events: auto;
+        background: rgba(6, 10, 20, 0.92);
+        border: 1px solid rgba(148, 163, 184, 0.35);
+        border-radius: 0.4rem;
+        box-shadow: 0 20px 45px rgba(2, 6, 23, 0.45);
+      }
+
+      .visualizer-gui-overlay .lil-gui .controller {
+        color: #f8fafc;
+      }
+
+      .visualizer-gui-overlay .lil-gui .gui-row input,
+      .visualizer-gui-overlay .lil-gui .gui-row select {
+        color: #f8fafc;
+      }
+
+      .visualizer-gui-overlay .lil-gui .controller[data-variant="success"] input {
+        color: #22c55e;
+      }
+
+      .visualizer-gui-overlay .lil-gui .controller[data-variant="warning"] input {
+        color: #facc15;
+      }
+
+      .visualizer-gui-overlay .lil-gui .controller[data-variant="error"] input {
+        color: #f87171;
+      }
+
+      .visualizer-gui-overlay .gui-tools {
+        margin-top: 0.75rem;
+        background: rgba(15, 23, 42, 0.85);
+        border: 1px solid rgba(99, 102, 241, 0.35);
+        border-radius: 0.4rem;
+        padding: 0.65rem;
+      }
+
+      .visualizer-gui-overlay .gui-tools textarea {
+        width: 100%;
+        min-height: 120px;
+        background: rgba(3, 7, 18, 0.8);
+        border: 1px solid rgba(148, 163, 184, 0.35);
+        color: #f8fafc;
+        border-radius: 0.35rem;
+        padding: 0.5rem;
+        resize: vertical;
+        font-family: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+      }
+
+      .visualizer-gui-overlay .gui-tools button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid rgba(148, 163, 184, 0.4);
+        border-radius: 0.35rem;
+        background: rgba(79, 70, 229, 0.35);
+        color: #fff;
+        padding: 0.35rem 0.75rem;
+        margin-right: 0.25rem;
+        margin-top: 0.35rem;
+        font-size: 0.85rem;
+        cursor: pointer;
+        flex: 1 1 auto;
+      }
+
+      .visualizer-gui-overlay .gui-tools button:hover {
+        background: rgba(99, 102, 241, 0.55);
+      }
+
+      .visualizer-gui-overlay .gui-tools input[type="file"] {
+        display: none;
+      }
+
+      .visualizer-gui-overlay .gui-tools-status {
+        margin-top: 0.35rem;
+        font-size: 0.8rem;
+        color: rgba(248, 250, 252, 0.75);
+      }
+
+      .visualizer-gui-overlay .gui-tools-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.35rem;
+        margin-bottom: 0.35rem;
+      }
+
+      .visualizer-gui-overlay .gui-tools-status[data-variant="success"] {
+        color: #22c55e;
+      }
+
+      .visualizer-gui-overlay .gui-tools-status[data-variant="warning"] {
+        color: #facc15;
+      }
+
+      .visualizer-gui-overlay .gui-tools-status[data-variant="error"] {
+        color: #f87171;
       }
 
       #visualizer-container canvas {
@@ -389,10 +497,6 @@
           <div class="control-block">
             <div class="control-title">Tracks</div>
             <div class="track-controls-root" data-ui="tracks"></div>
-          </div>
-          <div class="control-block">
-            <div class="control-title">Presets</div>
-            <div class="preset-controls-root" data-ui="presets"></div>
           </div>
         </div>
       </div>
