@@ -205,13 +205,13 @@ export const BASELINE_RIG_PRESET = {
       mode: "torque",
       jointName: "spineLower_spineMid",
       feature: { type: "band", index: 3 },
-      scale: 1,
-      smoothing: 0.55,
+      scale: 0.15,
+      smoothing: 0.65,
       min: -1,
       max: 1,
-      weight: 3.4,
-      damping: 0.6,
-      targetAngles: [-0.4, 0.4]
+      weight: 0.8,
+      damping: 0.75,
+      targetAngles: [-0.25, 0.25]
     },
     {
       id: "treble-twist",
@@ -235,13 +235,13 @@ export const BASELINE_RIG_PRESET = {
       mode: "torque",
       jointName: "tailBase_tailTip",
       feature: { type: "band", index: 0 },
-      scale: 1,
-      smoothing: 0.6,
+      scale: 0.2,
+      smoothing: 0.7,
       min: -1,
       max: 1,
-      weight: 2.6,
-      damping: 0.5,
-      targetAngles: [-0.8, 0.8]
+      weight: 0.4,
+      damping: 0.8,
+      targetAngles: [-0.35, 0.35]
     }
   ]
 };

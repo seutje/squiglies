@@ -111,3 +111,6 @@ es (or explicit neutral values) before hitting the rig.
  wins when the music stops.
 - Documented the new optional `neutral` schema property for presets so curated mappings can define their own baselines, then rer
 an `npm test` to confirm everything still passes.
+2025-11-16 - Softer baseline spine + tail mappings
+- Dialed back the baseline preset's mid-spiral torque and tail whip drive (lower scale/weight, tighter target angles, heavier damping) so the rig sways smoothly instead of snapping when those bands spike.
+- Re-ran the Jest suite (`npm test`) to ensure the preset schema + helpers still behave as expected.
