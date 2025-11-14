@@ -10,7 +10,7 @@ export class CameraController {
     this._targetVector = new THREE.Vector3();
     this._autoMotion = {
       enabled: true,
-      radius: 6,
+      radius: 12,
       height: 2.8,
       sway: 0.4,
       speed: 0.08,
@@ -29,7 +29,7 @@ export class CameraController {
 
     const aspect = this._getAspectRatio();
     this.camera = new THREE.PerspectiveCamera(55, aspect, 0.1, 100);
-    this.camera.position.set(3.5, 2.5, 5.8);
+    this.camera.position.set(7, 5, 11.6);
 
     const orbitTarget = new THREE.Vector3(0, 0.5, 0);
     const domElement = rendererDomElement ?? this.container;

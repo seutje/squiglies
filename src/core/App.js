@@ -38,6 +38,7 @@ export class App {
     this._featureSampleInterval = 1 / 60;
     this._featureAccumulator = 0;
     this._fftTier = "high";
+    this._audioPlaybackActive = false;
   }
 
   async init() {
@@ -105,16 +106,26 @@ export class App {
     const deltaSeconds = Math.min(deltaSecondsRaw, 1 / 24);
     this.lastTimestamp = timestamp;
 
-    this._featureAccumulator += Math.max(deltaSecondsRaw, 0);
-    let featureFrame = this._latestFeatureFrame;
-    if (!featureFrame || this._featureAccumulator >= this._featureSampleInterval) {
-      featureFrame = this._updateAudioFeatures();
+    const samplingActive = this._audioPlaybackActive;
+    let featureFrame = null;
+    if (samplingActive) {
+      this._featureAccumulator += Math.max(deltaSecondsRaw, 0);
+      featureFrame = this._latestFeatureFrame;
+      if (!featureFrame || this._featureAccumulator >= this._featureSampleInterval) {
+        featureFrame = this._updateAudioFeatures();
+        this._featureAccumulator = 0;
+      }
+    } else {
       this._featureAccumulator = 0;
+      this._latestFeatureFrame = null;
     }
 
     const activePreset = this.presetManager?.getCurrentPreset() ?? null;
-    this.audioDrivenRig?.update(featureFrame, deltaSeconds, activePreset);
-    this.physicsWorld?.step(deltaSeconds);
+    const rigFrame = this._audioPlaybackActive ? featureFrame : null;
+    this.audioDrivenRig?.update(rigFrame, deltaSeconds, activePreset);
+    if (this._audioPlaybackActive) {
+      this.physicsWorld?.step(deltaSeconds);
+    }
     this.audioDrivenRig?.syncVisuals();
     this.sceneManager?.update(deltaSeconds);
     this.cameraController?.update(deltaSeconds);
@@ -150,6 +161,10 @@ export class App {
       const track = event.detail?.track ?? null;
       this._handleTrackChanged(track);
     });
+    this.audioManager.addEventListener("statechange", (event) => {
+      this._handleAudioStateChange(event.detail?.state);
+    });
+    this._handleAudioStateChange(this.audioManager.getState());
 
     const transportRoot = this._resolveTransportRoot();
     this.transportControls = new TransportControls({
@@ -256,6 +271,17 @@ export class App {
     const trackId = typeof track === "string" ? track : track?.id ?? null;
     if (this.presetManager) {
       this.presetManager.setActiveTrack(trackId);
+    }
+  }
+
+  _handleAudioStateChange(state) {
+    const normalized = typeof state === "string" ? state.toLowerCase() : "";
+    const isPlaying = normalized === "playing";
+    this._audioPlaybackActive = isPlaying;
+    this.audioDrivenRig?.setPlaybackActive(isPlaying);
+    if (!isPlaying) {
+      this._latestFeatureFrame = null;
+      this._featureAccumulator = 0;
     }
   }
 

@@ -126,4 +126,39 @@ describe("AudioFeatureExtractor", () => {
     expect(second.rms).toBeLessThan(rawLoudRms);
     expect(second.energy).toBeLessThan(1);
   });
+
+  test("exposes fast activity gating so silence settles quickly", () => {
+    const loud = [0, 255, 0, 255, 0, 255, 0, 255];
+    const silent = new Array(fftSize).fill(128);
+    const richFrequency = new Array(fftSize / 2).fill(255);
+    const quietFrequency = new Array(fftSize / 2).fill(0);
+    const analyser = new MockAnalyser({ fftSize, timeData: loud, frequencyData: richFrequency });
+    const context = createContext(analyser);
+
+    const extractor = new AudioFeatureExtractor({
+      audioContext: context,
+      analyserNode: analyser,
+      featureSmoothing: 0.75,
+      silenceGate: {
+        floorRms: 0.002,
+        ceilingRms: 0.02,
+        attack: 0.5,
+        release: 0.05
+      }
+    });
+
+    const loudFrame = extractor.update();
+    expect(loudFrame.activity).toBeGreaterThan(0.4);
+    expect(loudFrame.isActive).toBe(true);
+
+    analyser.setTimeData(silent);
+    analyser.setFrequencyData(quietFrequency);
+    const quietFrame = extractor.update();
+
+    expect(quietFrame.activity).toBeGreaterThanOrEqual(0);
+    expect(quietFrame.activity).toBeLessThan(0.2);
+    expect(quietFrame.isActive).toBe(false);
+    expect(quietFrame.rms).toBe(0);
+    expect(quietFrame.bands.every((value) => value === 0)).toBe(true);
+  });
 });

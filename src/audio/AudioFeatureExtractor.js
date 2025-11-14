@@ -9,6 +9,13 @@ const DEFAULT_BAND_DEFINITIONS = [
   { label: "high", min: 6000, max: 16000 }
 ];
 const VALID_FFT_SIZES = [32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768];
+const DEFAULT_SILENCE_GATE = {
+  floorRms: 0.008,
+  ceilingRms: 0.035,
+  attack: 0.55,
+  release: 0.15,
+  activationThreshold: 0.05
+};
 
 export class AudioFeatureExtractor {
   constructor({
@@ -17,7 +24,8 @@ export class AudioFeatureExtractor {
     fftSize = 2048,
     bandDefinitions = DEFAULT_BAND_DEFINITIONS,
     rolloffPercent = 0.85,
-    featureSmoothing = 0.65
+    featureSmoothing = 0.65,
+    silenceGate = DEFAULT_SILENCE_GATE
   }) {
     if (!audioContext) {
       throw new Error("AudioFeatureExtractor requires an AudioContext");
@@ -43,6 +51,8 @@ export class AudioFeatureExtractor {
     this.rolloffPercent = clamp(rolloffPercent, 0, 1);
     this.featureSmoothing = clamp(featureSmoothing, 0, 0.99);
     this._latestFrame = null;
+    this.silenceGate = this._normalizeSilenceGate(silenceGate);
+    this._activityLevel = 0;
   }
 
   getAnalyserNode() {
@@ -82,6 +92,7 @@ export class AudioFeatureExtractor {
     const rmsResult = this._computeRmsAndPeak();
     const { bands, averageEnergy, centroid, rolloff } = this._computeFrequencyFeatures();
     const timestamp = typeof performance !== "undefined" ? performance.now() : Date.now();
+    const activity = this._updateActivityLevel(rmsResult.rms);
 
     const previous = this._latestFrame;
     const frame = {
@@ -95,8 +106,19 @@ export class AudioFeatureExtractor {
       bandLabels: this.bandDefinitions.map((band) => band.label),
       centroid: previous ? smoothValue(previous.centroid, centroid, this.featureSmoothing) : centroid,
       rolloff: previous ? smoothValue(previous.rolloff, rolloff, this.featureSmoothing) : rolloff,
-      energy: previous ? smoothValue(previous.energy, averageEnergy, this.featureSmoothing) : averageEnergy
+      energy: previous ? smoothValue(previous.energy, averageEnergy, this.featureSmoothing) : averageEnergy,
+      activity
     };
+    const isActive = activity >= this.silenceGate.activationThreshold;
+    frame.isActive = isActive;
+    if (!isActive) {
+      frame.rms = 0;
+      frame.peak = 0;
+      frame.energy = 0;
+      frame.centroid = 0;
+      frame.rolloff = 0;
+      frame.bands = new Array(frame.bands.length).fill(0);
+    }
 
     return frame;
   }
@@ -213,6 +235,58 @@ export class AudioFeatureExtractor {
       }
     }
     return closest;
+  }
+
+  _normalizeSilenceGate(config = {}) {
+    const floor = Number.isFinite(config.floorRms) ? Math.max(0, config.floorRms) : DEFAULT_SILENCE_GATE.floorRms;
+    const minCeiling = floor + 0.001;
+    const rawCeiling = Number.isFinite(config.ceilingRms) ? Math.max(minCeiling, config.ceilingRms) : DEFAULT_SILENCE_GATE.ceilingRms;
+    const attack = clamp(
+      Number.isFinite(config.attack) ? config.attack : DEFAULT_SILENCE_GATE.attack,
+      0,
+      0.99
+    );
+    const release = clamp(
+      Number.isFinite(config.release) ? config.release : DEFAULT_SILENCE_GATE.release,
+      0,
+      0.99
+    );
+    return {
+      floorRms: floor,
+      ceilingRms: rawCeiling,
+      attack,
+      release,
+      activationThreshold: clamp(
+        Number.isFinite(config.activationThreshold)
+          ? config.activationThreshold
+          : DEFAULT_SILENCE_GATE.activationThreshold,
+        0,
+        1
+      )
+    };
+  }
+
+  _updateActivityLevel(rmsValue) {
+    const normalized = this._normalizeActivity(rmsValue);
+    const smoothing =
+      normalized > this._activityLevel ? this.silenceGate.attack : this.silenceGate.release;
+    const next = smoothValue(this._activityLevel, normalized, smoothing);
+    this._activityLevel = clamp(next, 0, 1);
+    return this._activityLevel;
+  }
+
+  _normalizeActivity(rmsValue) {
+    if (!Number.isFinite(rmsValue)) {
+      return 0;
+    }
+    const { floorRms, ceilingRms } = this.silenceGate;
+    if (rmsValue <= floorRms) {
+      return 0;
+    }
+    if (rmsValue >= ceilingRms) {
+      return 1;
+    }
+    return (rmsValue - floorRms) / (ceilingRms - floorRms);
   }
 }
 

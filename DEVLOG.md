@@ -50,3 +50,23 @@
 2025-11-14 - Spotlight shadow artifacts
 - Rebuilt the floor into a stylized stage that ignores shadows plus a dedicated shadow-catcher mesh sitting above it, then hid the Rapier debug ground so overlapping receivers no longer produce the radial artifacts when the camera moves.
 - Tuned the spotlight’s bias/normal bias for the new catcher so the rig keeps contact shadows without self-shadow acne.
+
+2025-11-14 - Audio-reactive idle dampening
+- Added a fast-release “activity” signal to the AudioFeatureExtractor plus Jest coverage so silence is detected immediately without disturbing the existing smoothed feature stream.
+- Gated the AudioDrivenRig driver values with that activity signal, added a dynamic damping boost for near-silent frames, and introduced a movement floor so the rig stays still when the audio goes quiet.
+
+2025-11-14 - Physics suspends when audio is idle
+- Hooked App into AudioManager state so the RAF loop only advances Rapier when playback is actually running and the analyser reports an active frame; the rig now freezes instantly when there is no audio.
+- Added playback-aware gating in AudioDrivenRig plus a residual-motion bleed so joints zero out (or reset to rest) whenever audio is paused or the analyser reports silence.
+- Extended the AudioFeatureExtractor with an activation threshold + isActive flag that zeros the feature frame when RMS falls beneath the gate, with updated Jest coverage to lock in the behavior.
+
+2025-11-14 - Physics idles under gravity
+- Let the main RAF loop advance Rapier regardless of playback so the rig settles under gravity as soon as the scene loads, while still keeping joint actuation gated behind active audio frames.
+
+2025-11-14 - Rig stays still before playback
+- Reintroduced playback-aware gating in the RAF loop so Rapier only steps once the transport is actually running, preventing the rig from slumping under gravity before the user hits play.
+- Always run the AudioDrivenRig update each frame (with null features when idle) so it can keep bleeding any residual motion without relying on the physics step.
+- Verified the change by running `npm test` to confirm the existing Jest suites still pass.
+
+2025-11-14 - Camera default zoom distance
+- Doubled the camera’s baseline orbit radius and starting position so the visualizer loads with a wider framing, keeping the full rig in view before the auto-motion kicks in.

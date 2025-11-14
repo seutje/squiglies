@@ -32,6 +32,14 @@ export class AudioDrivenRig {
     this._maxTargetAngle = Math.PI * 0.65;
     this.driveIntensity = 1;
     this.dampingMultiplier = 1;
+    this._activityLevel = 0;
+    this._activitySmoothing = { attack: 0.35, release: 0.08 };
+    this._fallbackActivityRange = { min: 0.01, max: 0.08 };
+    this._movementFloor = 0.015;
+    this._silenceDampingBoost = 1.6;
+    this._activityDampingScale = 1;
+    this._playbackActive = false;
+    this._frameActivationThreshold = 0.05;
   }
 
   init() {
@@ -54,6 +62,10 @@ export class AudioDrivenRig {
   }
 
   update(featureFrame, deltaSeconds = 0, preset = null) {
+    if (!this._playbackActive) {
+      this._bleedResidualMotion();
+      return;
+    }
     if (!featureFrame || !this.world) return;
     if (preset) {
       this._currentPreset = preset;
@@ -61,6 +73,12 @@ export class AudioDrivenRig {
     const activePreset = this._currentPreset ?? BASELINE_RIG_PRESET;
     const mappings = activePreset?.mappings ?? BASELINE_RIG_PRESET.mappings;
     if (!Array.isArray(mappings)) return;
+    const frameActive = this._isFrameActive(featureFrame);
+    this._updateActivityState(featureFrame);
+    if (!frameActive) {
+      this._bleedResidualMotion();
+      return;
+    }
 
     mappings.forEach((rawMapping) => {
       const mapping = normalizeMappingConfig(rawMapping);
@@ -70,8 +88,17 @@ export class AudioDrivenRig {
       if (!Number.isFinite(featureValue)) return;
       const drivenValue = this._computeDriveValue(featureValue, mapping);
       if (!Number.isFinite(drivenValue)) return;
+      const gatedValue = this._applyActivityGate(drivenValue);
+      if (!Number.isFinite(gatedValue)) return;
 
-      const smoothed = this._smoothMappingValue(mapping.id ?? mapping.jointName ?? mapping.bodyName, drivenValue, mapping.smoothing);
+      const smoothed = this._smoothMappingValue(
+        mapping.id ?? mapping.jointName ?? mapping.bodyName,
+        gatedValue,
+        mapping.smoothing
+      );
+      if (smoothed === 0) {
+        return;
+      }
 
       if (mapping.mode === "impulse") {
         this._applyImpulse(mapping.bodyName, mapping.axis, smoothed * (mapping.weight ?? 1));
@@ -107,6 +134,8 @@ export class AudioDrivenRig {
       body.setAngvel(new this.RAPIER.Vector3(0, 0, 0), true);
     });
     this.smoothingState.clear();
+    this._activityLevel = 0;
+    this._activityDampingScale = 1;
     this._applyBodyDamping();
   }
 
@@ -148,6 +177,18 @@ export class AudioDrivenRig {
     if (!Number.isFinite(value)) return;
     this.dampingMultiplier = clamp(value, 0.1, 3);
     this._applyBodyDamping();
+  }
+
+  setPlaybackActive(isActive) {
+    const next = Boolean(isActive);
+    if (next === this._playbackActive) return;
+    this._playbackActive = next;
+    if (!next) {
+      this._bleedResidualMotion(true);
+    } else {
+      this._activityLevel = 0;
+      this.smoothingState.clear();
+    }
   }
 
   _buildBodies() {
@@ -329,10 +370,14 @@ export class AudioDrivenRig {
   }
 
   _smoothMappingValue(key, value, smoothing = 0.5) {
+    if (Math.abs(value) < this._movementFloor) {
+      value = 0;
+    }
     const previous = this.smoothingState.get(key);
     const next = previous === undefined ? value : smoothValue(previous, value, smoothing);
-    this.smoothingState.set(key, next);
-    return next;
+    const flattened = Math.abs(next) < this._movementFloor ? 0 : next;
+    this.smoothingState.set(key, flattened);
+    return flattened;
   }
 
   _applyImpulse(bodyName, axis, magnitude) {
@@ -434,10 +479,91 @@ export class AudioDrivenRig {
       const body = this.world.getRigidBody(handle);
       if (!body) return;
       const config = this._bodyConfigs.get(name) ?? {};
-      const linearDamping = (config.linearDamping ?? 0.5) * this.dampingMultiplier;
-      const angularDamping = (config.angularDamping ?? 0.5) * this.dampingMultiplier;
+      const scale = this.dampingMultiplier * this._activityDampingScale;
+      const linearDamping = (config.linearDamping ?? 0.5) * scale;
+      const angularDamping = (config.angularDamping ?? 0.5) * scale;
       body.setLinearDamping(linearDamping);
       body.setAngularDamping(angularDamping);
+    });
+  }
+
+  _updateActivityState(featureFrame) {
+    const target = this._resolveActivityTarget(featureFrame);
+    const smoothing = target > this._activityLevel ? this._activitySmoothing.attack : this._activitySmoothing.release;
+    const next = smoothValue(this._activityLevel, target, smoothing);
+    this._activityLevel = clamp(next, 0, 1);
+    this._updateActivityDampingScale(this._activityLevel);
+    return this._activityLevel;
+  }
+
+  _resolveActivityTarget(frame) {
+    if (frame && Number.isFinite(frame.activity)) {
+      return clamp(frame.activity, 0, 1);
+    }
+    const rms = Number.isFinite(frame?.rms) ? frame.rms : 0;
+    const min = this._fallbackActivityRange.min;
+    const max = this._fallbackActivityRange.max;
+    if (rms <= min) return 0;
+    if (rms >= max) return 1;
+    return (rms - min) / (max - min);
+  }
+
+  _updateActivityDampingScale(activityLevel) {
+    const silence = clamp(1 - activityLevel, 0, 1);
+    const boost = silence <= 0 ? 0 : silence * silence * this._silenceDampingBoost;
+    const targetScale = 1 + boost;
+    if (Math.abs(targetScale - this._activityDampingScale) < 0.02) {
+      return;
+    }
+    this._activityDampingScale = targetScale;
+    this._applyBodyDamping();
+  }
+
+  _applyActivityGate(value) {
+    if (!Number.isFinite(value)) {
+      return 0;
+    }
+    const gated = value * this._activityLevel;
+    if (Math.abs(gated) < this._movementFloor) {
+      return 0;
+    }
+    return gated;
+  }
+
+  _isFrameActive(frame) {
+    if (!frame) return false;
+    if (typeof frame.isActive === "boolean") {
+      return frame.isActive;
+    }
+    const activity = Number.isFinite(frame.activity) ? frame.activity : 0;
+    return activity >= this._frameActivationThreshold;
+  }
+
+  _bleedResidualMotion(forceResetPose = false) {
+    if (!this.world) return;
+    this._zeroBodyVelocities();
+    if (forceResetPose) {
+      this.initialStates.forEach((state, handle) => {
+        const body = this.world.getRigidBody(handle);
+        if (!body) return;
+        body.setTranslation(new this.RAPIER.Vector3(...state.translation), true);
+        body.setRotation(
+          new this.RAPIER.Quaternion(state.rotation.x, state.rotation.y, state.rotation.z, state.rotation.w),
+          true
+        );
+      });
+      this.smoothingState.clear();
+      this._applyBodyDamping();
+    }
+  }
+
+  _zeroBodyVelocities() {
+    if (!this.world) return;
+    this.bodiesByName.forEach((handle) => {
+      const body = this.world.getRigidBody(handle);
+      if (!body) return;
+      body.setLinvel(new this.RAPIER.Vector3(0, 0, 0), true);
+      body.setAngvel(new this.RAPIER.Vector3(0, 0, 0), true);
     });
   }
 }
