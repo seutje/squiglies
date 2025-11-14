@@ -31,7 +31,8 @@ export class AudioDrivenRig {
     this._maxImpulse = 6;
     this._maxTorque = 10;
     this._maxTargetAngle = Math.PI * 0.65;
-    this.driveIntensity = 1;
+    this._driveAttenuation = 0.6;
+    this.driveIntensity = 0.7;
     this.dampingMultiplier = 1;
     this._activityLevel = 0;
     this._activitySmoothing = { attack: 0.4, release: 0.08 };
@@ -170,7 +171,7 @@ export class AudioDrivenRig {
     }
   }
 
-  setDriveIntensity(value = 1) {
+  setDriveIntensity(value = 0.7) {
     if (!Number.isFinite(value)) return;
     this.driveIntensity = clamp(value, 0.1, 3);
   }
@@ -400,7 +401,8 @@ export class AudioDrivenRig {
     if (!body) return;
     if (!Number.isFinite(magnitude)) return;
     const direction = this._normalizeAxis(axis);
-    const impulseLimit = this._maxImpulse * this.driveIntensity;
+    const driveScale = this.driveIntensity * this._driveAttenuation;
+    const impulseLimit = this._maxImpulse * driveScale;
     const clampedMagnitude = clamp(magnitude, -impulseLimit, impulseLimit);
     const impulse = new this.RAPIER.Vector3(
       direction[0] * clampedMagnitude,
@@ -423,7 +425,8 @@ export class AudioDrivenRig {
       : controlValue;
 
     const limitedAngle = clamp(targetAngle, -this._maxTargetAngle, this._maxTargetAngle);
-    const torqueLimit = this._maxTorque * this.driveIntensity;
+    const driveScale = this.driveIntensity * this._driveAttenuation;
+    const torqueLimit = this._maxTorque * driveScale;
     const torqueMagnitude = clamp(limitedAngle * (mapping.weight ?? 1), -torqueLimit, torqueLimit);
     const torque = new this.RAPIER.Vector3(
       direction[0] * torqueMagnitude,

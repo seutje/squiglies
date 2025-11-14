@@ -98,3 +98,6 @@
 2025-11-14 - Rig respawn safety net
 - Added a rig bounds helper with Jest coverage so we can quickly detect when any Rapier body dips well below the ground plane.
 - Updated AudioDrivenRig/App to use the helper and automatically reset the pose whenever the rig falls off the floor, keeping the scene recoverable without manual reloads.
+2025-11-15 - Softer audio drive response
+- Introduced a rig-wide drive attenuation multiplier and lowered the default drive intensity so impulses/torque from audio features stay more subtle even when presets run at their previous stiffness levels.
+- Dropped the lil-gui “Rig drive” slider floor plus all preset/default stiffness values to keep newly generated and bundled presets in the calmer response range, then re-ran `npm test` to confirm everything still passes.

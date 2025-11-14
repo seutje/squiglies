@@ -1,7 +1,7 @@
 {
   "id": "trask01-default",
   "name": "Track 01 Rig Mapping",
-  "description": "Default mapping proving audio → physics loop",
+  "description": "Default mapping proving audio \u2192 physics loop",
   "mappings": [
     {
       "id": "core-pulse",
@@ -58,7 +58,7 @@
       0
     ],
     "damping": 0.6,
-    "stiffness": 1
+    "stiffness": 0.7
   },
   "rendering": {
     "backgroundColor": "#050505",

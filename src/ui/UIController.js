@@ -11,7 +11,7 @@ const STATUS_VARIANTS = {
 const PARAM_DEFAULTS = {
   gravity: -9.81,
   damping: 0.6,
-  stiffness: 1
+  stiffness: 0.7
 };
 
 const GUI_DEFAULTS = {
@@ -263,7 +263,7 @@ export class UIController {
       .name("Gravity (Y)")
       .onChange((value) => this._handleGuiParameterChange("gravity", value));
     this.guiControllers.stiffness = physicsFolder
-      .add(this.guiState, "stiffness", 0.25, 2, 0.05)
+      .add(this.guiState, "stiffness", 0.1, 1.5, 0.05)
       .name("Rig drive")
       .onChange((value) => this._handleGuiParameterChange("stiffness", value));
     this.guiControllers.damping = physicsFolder

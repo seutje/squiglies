@@ -5,7 +5,7 @@ const DEFAULT_PRESET_BASE_PATH = "./presets";
 const DEFAULT_PHYSICS = {
   gravity: [0, -9.81, 0],
   damping: 0.6,
-  stiffness: 1
+  stiffness: 0.7
 };
 const DEFAULT_RENDERING = {
   backgroundColor: "#050505",
@@ -366,7 +366,7 @@ export class PresetManager extends EventTarget {
     return {
       gravity: [baseGravity[0] + jitter() * 0.2, baseGravity[1] + jitter(), baseGravity[2] + jitter() * 0.2],
       damping: 0.3 + Math.random() * 0.5,
-      stiffness: 0.8 + Math.random() * 0.6
+      stiffness: 0.5 + Math.random() * 0.5
     };
   }
 
