@@ -132,3 +132,6 @@ an `npm test` to confirm everything still passes.
 2025-11-15 - Sideways rig drop
 - Added a global rig-orientation quaternion and spawn elevation inside `AudioDrivenRig` so every body is rotated 90° onto its side, translated into that sideways pose, and lifted slightly before the simulation runs.
 - Updated the translation/rotation helpers to apply the shared orientation plus offset, then executed `npm test` to confirm the existing suites still pass with the new spawn logic.
+2025-11-15 - Symmetric drive mapping
+- Remapped the AudioDrivenRig drive helper so normalized 0/1 feature values now interpolate between each mapping's min/max, letting torque-driven joints swing both directions instead of staying positive.
+- Added a dedicated driveMapping helper plus Jest coverage for the 0→min / 1→max behavior, then ran `npm test` to confirm all suites continue to pass.
