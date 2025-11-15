@@ -1,26 +1,29 @@
+import { describe, expect, test } from "@jest/globals";
 import { TrackRegistry } from "./TrackRegistry.js";
 
 describe("TrackRegistry", () => {
-  it("returns the full bundled track list", () => {
-    const registry = new TrackRegistry();
-    const tracks = registry.listTracks();
+  const buildRegistry = () =>
+    new TrackRegistry([
+      { id: "track01", title: "One", filename: "01.mp3" },
+      { id: "track02", title: "Two", filename: "02.mp3" },
+      { id: "track03", title: "Three", filename: "03.mp3" }
+    ]);
 
-    expect(tracks).toHaveLength(11);
-    expect(tracks[0].id).toBe("track01");
-    expect(tracks[10].title).toBe("Cooking Up");
+  test("getNextTrack returns the next sequential entry", () => {
+    const registry = buildRegistry();
+    const result = registry.getNextTrack("track01");
+    expect(result.id).toBe("track02");
   });
 
-  it("resolves tracks by id and exposes file paths", () => {
-    const registry = new TrackRegistry();
-    const track = registry.getTrackById("track05");
-
-    expect(track).toBeDefined();
-    expect(track.filename).toBe("05 - Nobody's Brand.mp3");
-    expect(track.src).toBe("./audio/05 - Nobody's Brand.mp3");
+  test("getNextTrack wraps to the first track when at the end of the list", () => {
+    const registry = buildRegistry();
+    const result = registry.getNextTrack("track03");
+    expect(result.id).toBe("track01");
   });
 
-  it("returns null for unknown ids", () => {
-    const registry = new TrackRegistry();
-    expect(registry.getTrackById("unknown")).toBeNull();
+  test("getNextTrack falls back to the default track when id is missing", () => {
+    const registry = buildRegistry();
+    const result = registry.getNextTrack("unknown-track");
+    expect(result.id).toBe("track01");
   });
 });

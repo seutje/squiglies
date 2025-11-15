@@ -99,6 +99,24 @@ export class TrackRegistry {
     return this._tracks[0] ?? null;
   }
 
+  getNextTrack(currentTrackId = null) {
+    if (!this._tracks.length) {
+      return null;
+    }
+
+    if (!currentTrackId) {
+      return this.getDefaultTrack();
+    }
+
+    const currentIndex = this._tracks.findIndex((track) => track.id === currentTrackId);
+    if (currentIndex === -1) {
+      return this.getDefaultTrack();
+    }
+
+    const nextIndex = (currentIndex + 1) % this._tracks.length;
+    return this._tracks[nextIndex];
+  }
+
   _buildSrc(filename) {
     if (!filename) {
       throw new Error("Track filename is required");

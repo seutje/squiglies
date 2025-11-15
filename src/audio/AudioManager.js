@@ -203,6 +203,22 @@ export class AudioManager extends EventTarget {
     this._emitTimeUpdate();
   }
 
+  async playNextTrack() {
+    if (typeof this.trackRegistry?.getNextTrack !== "function") {
+      return null;
+    }
+
+    const baseTrackId = this.currentTrack?.id ?? null;
+    const nextTrack = this.trackRegistry.getNextTrack(baseTrackId);
+    if (!nextTrack) {
+      return null;
+    }
+
+    await this.loadTrack(nextTrack.id);
+    await this.play();
+    return nextTrack;
+  }
+
   async unlockContext() {
     try {
       await this._resumeContext();
@@ -240,6 +256,7 @@ export class AudioManager extends EventTarget {
       })
     );
     this._emitTimeUpdate();
+    this._autoAdvanceToNextTrack();
   }
 
   _teardownSource(resetOffset) {
@@ -453,6 +470,15 @@ export class AudioManager extends EventTarget {
       filename: file?.name ?? "local-audio",
       isUserTrack: true
     };
+  }
+
+  _autoAdvanceToNextTrack() {
+    if (!this.trackRegistry || this.currentTrack?.isUserTrack) {
+      return;
+    }
+    this.playNextTrack().catch((error) => {
+      this._emitError("Failed to advance to next track", error);
+    });
   }
 }
 

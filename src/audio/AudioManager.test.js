@@ -89,3 +89,70 @@ describe("AudioManager playback delay", () => {
     expect(latestSource.start).toHaveBeenCalledWith(expectedStart, 0);
   });
 });
+
+describe("AudioManager track sequencing", () => {
+  let manager;
+  let registry;
+
+  beforeEach(() => {
+    registry = {
+      getTrackById: () => null,
+      getNextTrack: jest.fn()
+    };
+    manager = new AudioManager({ trackRegistry: registry });
+    manager.dispatchEvent = jest.fn();
+    jest.spyOn(manager, "_emitTimeUpdate").mockImplementation(() => {});
+    jest.spyOn(manager, "_emitError").mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  test("playNextTrack loads and plays the next bundled track", async () => {
+    manager.currentTrack = { id: "track01" };
+    registry.getNextTrack.mockReturnValue({ id: "track02" });
+    const loadSpy = jest.spyOn(manager, "loadTrack").mockResolvedValue({});
+    const playSpy = jest.spyOn(manager, "play").mockResolvedValue();
+
+    const result = await manager.playNextTrack();
+
+    expect(registry.getNextTrack).toHaveBeenCalledWith("track01");
+    expect(loadSpy).toHaveBeenCalledWith("track02");
+    expect(playSpy).toHaveBeenCalled();
+    expect(result).toEqual({ id: "track02" });
+  });
+
+  test("playNextTrack returns null when no additional tracks are available", async () => {
+    registry.getNextTrack.mockReturnValue(null);
+    const loadSpy = jest.spyOn(manager, "loadTrack").mockResolvedValue({});
+    const playSpy = jest.spyOn(manager, "play").mockResolvedValue();
+
+    const result = await manager.playNextTrack();
+
+    expect(result).toBeNull();
+    expect(loadSpy).not.toHaveBeenCalled();
+    expect(playSpy).not.toHaveBeenCalled();
+  });
+
+  test("_handlePlaybackEnded auto-advances to the next bundled track", () => {
+    manager.currentTrack = { id: "track03" };
+    manager.currentBuffer = { duration: 200 };
+    jest.spyOn(manager, "_teardownSource").mockImplementation(() => {});
+    jest.spyOn(manager, "_setState").mockImplementation(() => {});
+    const advanceSpy = jest.spyOn(manager, "playNextTrack").mockResolvedValue(null);
+
+    manager._handlePlaybackEnded();
+
+    expect(advanceSpy).toHaveBeenCalled();
+  });
+
+  test("_autoAdvanceToNextTrack skips user-loaded tracks", () => {
+    manager.currentTrack = { id: "user-track", isUserTrack: true };
+    const advanceSpy = jest.spyOn(manager, "playNextTrack").mockResolvedValue(null);
+
+    manager._autoAdvanceToNextTrack();
+
+    expect(advanceSpy).not.toHaveBeenCalled();
+  });
+});
