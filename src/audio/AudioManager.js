@@ -30,6 +30,8 @@ export class AudioManager extends EventTarget {
     this._timeUpdateInterval = null;
     this._contextUnlocked = false;
     this._needsUserUnlock = false;
+    this._startDelaySeconds = 1;
+    this._delayEpsilon = 1e-3;
   }
 
   async getAudioContext() {
@@ -153,9 +155,8 @@ export class AudioManager extends EventTarget {
     if (this.state === AudioState.PLAYING) return;
 
     this._createSource();
-    this.playbackStartTime = (this.audioContext?.currentTime ?? 0) - this.pauseOffset;
     try {
-      this.sourceNode.start(0, this.pauseOffset);
+      this._startSourceWithOffset({ allowDelay: true });
     } catch (error) {
       this._emitError("Unable to start playback", error);
       throw error;
@@ -190,9 +191,9 @@ export class AudioManager extends EventTarget {
     if (this.state === AudioState.PLAYING) {
       this._teardownSource(false);
       this._createSource();
-      this.playbackStartTime = (this.audioContext?.currentTime ?? 0) - this.pauseOffset;
       try {
-        this.sourceNode.start(0, this.pauseOffset);
+        const allowDelay = clamped <= this._delayEpsilon;
+        this._startSourceWithOffset({ allowDelay });
       } catch (error) {
         this._emitError("Failed to seek", error);
         throw error;
@@ -417,6 +418,28 @@ export class AudioManager extends EventTarget {
     this._emitMessage("");
     this._emitTimeUpdate();
     return track;
+  }
+
+  _startSourceWithOffset({ allowDelay = false } = {}) {
+    if (!this.sourceNode) {
+      throw new Error("Audio source node is not available");
+    }
+    const ctx = this.audioContext;
+    if (!ctx) {
+      throw new Error("Audio context is not available");
+    }
+    const shouldDelay = allowDelay && this._shouldApplyStartDelay();
+    const delaySeconds = shouldDelay ? this._startDelaySeconds : 0;
+    const scheduledStartTime = ctx.currentTime + delaySeconds;
+    this.playbackStartTime = scheduledStartTime - this.pauseOffset;
+    this.sourceNode.start(scheduledStartTime, this.pauseOffset);
+  }
+
+  _shouldApplyStartDelay() {
+    if (!this._startDelaySeconds || this._startDelaySeconds <= 0) {
+      return false;
+    }
+    return Math.abs(this.pauseOffset) <= this._delayEpsilon;
   }
 
   _buildUserTrackMetadata(file) {

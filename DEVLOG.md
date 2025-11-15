@@ -120,3 +120,6 @@ an `npm test` to confirm everything still passes.
 2025-11-16 - Rig cloning control
 - Added an “Add rig” button to the lil-gui Presets folder that calls back into App so users can duplicate the current rig configuration right from the preset controls.
 - Updated App/AudioDrivenRig to support multiple simultaneously simulated rigs with per-instance offsets, then re-ran `npm test` to confirm all suites continue to pass.
+2025-11-16 - Track lead-in silence buffer
+- Added a configurable one-second start delay inside AudioManager so every track begins with a short silent lead-in, giving the rig time to settle under gravity before audio-driven impulses kick in.
+- Covered the new scheduling logic with dedicated Jest tests for fresh starts, paused resumes, and seek-to-zero flows, then re-ran `npm test` to confirm the full suite still passes.
