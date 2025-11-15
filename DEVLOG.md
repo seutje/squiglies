@@ -126,3 +126,6 @@ an `npm test` to confirm everything still passes.
 2025-11-16 - Automatic track sequencing
 - Added a TrackRegistry helper plus AudioManager.next-track workflow so playback automatically advances to the next bundled song and loops after the last entry while skipping user-loaded files.
 - Expanded the AudioManager and TrackRegistry Jest suites to lock in the sequencing behavior, then re-ran `npm test` to confirm everything still passes.
+2025-11-15 - Symmetric drive mapping
+- Remapped the AudioDrivenRig drive helper so normalized 0/1 feature values now interpolate between each mapping's min/max, letting torque-driven joints swing both directions instead of staying positive.
+- Added a dedicated driveMapping helper plus Jest coverage for the 0→min / 1→max behavior, then ran `npm test` to confirm all suites continue to pass.

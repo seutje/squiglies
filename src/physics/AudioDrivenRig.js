@@ -9,6 +9,7 @@ import {
 } from "../config/rigDefinition.js";
 import { DEFAULT_RESPAWN_THRESHOLD, hasBodiesBelowThreshold } from "./rigBounds.js";
 import { ImpulseZeroCenter } from "./ImpulseZeroCenter.js";
+import { computeDriveValue } from "./driveMapping.js";
 
 export class AudioDrivenRig {
   constructor({ physicsWorld, scene, maxBodies = RIG_BODY_LIMIT, positionOffset = [0, 0, 0] } = {}) {
@@ -400,13 +401,7 @@ export class AudioDrivenRig {
   }
 
   _computeDriveValue(value, mapping) {
-    if (!Number.isFinite(value)) {
-      return 0;
-    }
-    const scaled = (mapping.scale ?? 1) * value + (mapping.offset ?? 0);
-    const min = Number.isFinite(mapping.min) ? mapping.min : -1;
-    const max = Number.isFinite(mapping.max) ? mapping.max : 1;
-    return clamp(scaled, min, max);
+    return computeDriveValue(value, mapping);
   }
 
   _smoothMappingValue(key, value, smoothing = 0.5) {
