@@ -16,6 +16,14 @@ const DEFAULT_SILENCE_GATE = {
   release: 0.12,
   activationThreshold: 0.012
 };
+const DEFAULT_FEATURE_SMOOTHING = {
+  rms: 0.35,
+  peak: 0.35,
+  energy: 0.4,
+  centroid: 0.45,
+  rolloff: 0.45,
+  bands: 0.4
+};
 
 export class AudioFeatureExtractor {
   constructor({
@@ -24,7 +32,8 @@ export class AudioFeatureExtractor {
     fftSize = 2048,
     bandDefinitions = DEFAULT_BAND_DEFINITIONS,
     rolloffPercent = 0.85,
-    silenceGate = DEFAULT_SILENCE_GATE
+    silenceGate = DEFAULT_SILENCE_GATE,
+    featureSmoothing = DEFAULT_FEATURE_SMOOTHING
   }) {
     if (!audioContext) {
       throw new Error("AudioFeatureExtractor requires an AudioContext");
@@ -51,6 +60,8 @@ export class AudioFeatureExtractor {
     this._latestFrame = null;
     this.silenceGate = this._normalizeSilenceGate(silenceGate);
     this._activityLevel = 0;
+    this.featureSmoothing = this._normalizeFeatureSmoothing(featureSmoothing);
+    this._smoothingState = this._createSmoothingState(this.bandDefinitions.length);
   }
 
   getAnalyserNode() {
@@ -98,7 +109,7 @@ export class AudioFeatureExtractor {
       nyquist
     } = this._computeFrequencyFeatures();
     const timestamp = typeof performance !== "undefined" ? performance.now() : Date.now();
-    const activity = this._updateActivityLevel(rmsResult.rms);
+    const { smoothedActivity, instantActivity } = this._updateActivityLevel(rmsResult.rms);
 
     const frame = {
       timestamp,
@@ -112,19 +123,16 @@ export class AudioFeatureExtractor {
       rolloffHz: rolloff,
       nyquist,
       energy: averageEnergy,
-      activity
+      activity: smoothedActivity
     };
-    const isActive = activity >= this.silenceGate.activationThreshold;
+    const isActive = instantActivity >= this.silenceGate.activationThreshold;
     frame.isActive = isActive;
     if (!isActive) {
-      frame.rms = 0;
-      frame.peak = 0;
-      frame.energy = 0;
-      frame.centroid = 0;
-      frame.centroidHz = 0;
-      frame.rolloff = 0;
-      frame.rolloffHz = 0;
-      frame.bands = new Array(frame.bands.length).fill(0);
+      this._zeroFrameFeatures(frame);
+    }
+    this._applyFrameSmoothing(frame);
+    if (!isActive) {
+      this._zeroFrameFeatures(frame, { keepBandArray: true });
     }
 
     return frame;
@@ -254,6 +262,121 @@ export class AudioFeatureExtractor {
     return closest;
   }
 
+  _normalizeFeatureSmoothing(config = {}) {
+    if (typeof config === "number") {
+      const value = clamp(config, 0, 0.99);
+      return {
+        rms: value,
+        peak: value,
+        energy: value,
+        centroid: value,
+        rolloff: value,
+        bands: value
+      };
+    }
+    if (!config || typeof config !== "object") {
+      return { ...DEFAULT_FEATURE_SMOOTHING };
+    }
+    const normalized = { ...DEFAULT_FEATURE_SMOOTHING };
+    for (const key of Object.keys(normalized)) {
+      if (Number.isFinite(config[key])) {
+        normalized[key] = clamp(config[key], 0, 0.99);
+      }
+    }
+    return normalized;
+  }
+
+  _createSmoothingState(bandCount = 0) {
+    const safeCount = Math.max(0, Math.floor(bandCount));
+    return {
+      rms: 0,
+      peak: 0,
+      energy: 0,
+      centroidHz: 0,
+      rolloffHz: 0,
+      bands: new Array(safeCount).fill(0)
+    };
+  }
+
+  _zeroFrameFeatures(frame, { keepBandArray = false } = {}) {
+    frame.rms = 0;
+    frame.peak = 0;
+    frame.energy = 0;
+    frame.centroid = 0;
+    frame.centroidHz = 0;
+    frame.rolloff = 0;
+    frame.rolloffHz = 0;
+    if (Array.isArray(frame.bands)) {
+      if (keepBandArray) {
+        frame.bands.fill(0);
+      } else {
+        frame.bands = new Array(frame.bands.length).fill(0);
+      }
+    } else {
+      frame.bands = [];
+    }
+  }
+
+  _applyFrameSmoothing(frame) {
+    if (!this._smoothingState) return;
+    frame.rms = this._smoothScalar("rms", frame.rms, this.featureSmoothing.rms);
+    frame.peak = this._smoothScalar("peak", frame.peak, this.featureSmoothing.peak);
+    frame.energy = this._smoothScalar("energy", frame.energy, this.featureSmoothing.energy);
+
+    const centroidHz = this._smoothScalar(
+      "centroidHz",
+      frame.centroidHz,
+      this.featureSmoothing.centroid
+    );
+    frame.centroidHz = centroidHz;
+    frame.centroid = clamp(safeDivide(centroidHz, frame.nyquist || 1), 0, 1);
+
+    const rolloffHz = this._smoothScalar(
+      "rolloffHz",
+      frame.rolloffHz,
+      this.featureSmoothing.rolloff
+    );
+    frame.rolloffHz = rolloffHz;
+    frame.rolloff = clamp(safeDivide(rolloffHz, frame.nyquist || 1), 0, 1);
+
+    this._smoothBands(frame);
+  }
+
+  _smoothScalar(key, targetValue, smoothingFactor) {
+    const state = this._smoothingState;
+    if (!state) {
+      return Number.isFinite(targetValue) ? targetValue : 0;
+    }
+    const target = Number.isFinite(targetValue) ? targetValue : 0;
+    const previous = state[key];
+    const next = previous === undefined ? target : smoothValue(previous, target, smoothingFactor);
+    state[key] = next;
+    return next;
+  }
+
+  _smoothBands(frame) {
+    if (!Array.isArray(frame.bands) || !frame.bands.length) {
+      this._smoothingState.bands = new Array(this.bandDefinitions.length).fill(0);
+      frame.bands = [];
+      return;
+    }
+    const bandCount = frame.bands.length;
+    if (
+      !Array.isArray(this._smoothingState.bands) ||
+      this._smoothingState.bands.length !== bandCount
+    ) {
+      this._smoothingState.bands = new Array(bandCount).fill(0);
+    }
+    const smoothingFactor = this.featureSmoothing.bands;
+    frame.bands = frame.bands.map((value, index) => {
+      const target = Number.isFinite(value) ? value : 0;
+      const previous = this._smoothingState.bands[index];
+      const next = previous === undefined ? target : smoothValue(previous, target, smoothingFactor);
+      this._smoothingState.bands[index] = next;
+      return next;
+    });
+  }
+
   _normalizeSilenceGate(config = {}) {
     const floor = Number.isFinite(config.floorRms) ? Math.max(0, config.floorRms) : DEFAULT_SILENCE_GATE.floorRms;
     const minCeiling = floor + 0.001;
@@ -289,7 +412,10 @@ export class AudioFeatureExtractor {
       normalized > this._activityLevel ? this.silenceGate.attack : this.silenceGate.release;
     const next = smoothValue(this._activityLevel, normalized, smoothing);
     this._activityLevel = clamp(next, 0, 1);
-    return this._activityLevel;
+    return {
+      smoothedActivity: this._activityLevel,
+      instantActivity: normalized
+    };
   }
 
   _normalizeActivity(rmsValue) {

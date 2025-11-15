@@ -64,7 +64,8 @@ describe("AudioFeatureExtractor", () => {
     const extractor = new AudioFeatureExtractor({
       audioContext: context,
       analyserNode: analyser,
-      bandDefinitions
+      bandDefinitions,
+      featureSmoothing: 0
     });
 
     const frame = extractor.update();
@@ -113,7 +114,8 @@ describe("AudioFeatureExtractor", () => {
     const extractor = new AudioFeatureExtractor({
       audioContext: context,
       analyserNode: analyser,
-      bandDefinitions: DEFAULT_BAND_DEFINITIONS.slice(0, 2)
+      bandDefinitions: DEFAULT_BAND_DEFINITIONS.slice(0, 2),
+      featureSmoothing: 0
     });
 
     const first = extractor.update();
@@ -126,6 +128,50 @@ describe("AudioFeatureExtractor", () => {
     expect(first.rms).toBeCloseTo(0, 5);
     expect(second.rms).toBeCloseTo(rawLoudRms, 5);
     expect(second.energy).toBeCloseTo(1, 5);
+  });
+
+  test("smooths scalar and band features when enabled", () => {
+    const silent = new Array(fftSize).fill(128);
+    const loud = [0, 255, 0, 255, 0, 255, 0, 255];
+    const emptyFreq = new Array(fftSize / 2).fill(0);
+    const richFreq = new Array(fftSize / 2).fill(255);
+    const analyser = new MockAnalyser({ fftSize, timeData: silent, frequencyData: emptyFreq });
+    const context = createContext(analyser);
+
+    const smoothingValue = 0.8;
+    const extractor = new AudioFeatureExtractor({
+      audioContext: context,
+      analyserNode: analyser,
+      bandDefinitions: DEFAULT_BAND_DEFINITIONS.slice(0, 2),
+      featureSmoothing: {
+        rms: smoothingValue,
+        peak: smoothingValue,
+        energy: smoothingValue,
+        centroid: smoothingValue,
+        rolloff: smoothingValue,
+        bands: smoothingValue
+      },
+      silenceGate: {
+        floorRms: 0.0001,
+        ceilingRms: 0.001,
+        attack: 0.5,
+        release: 0.5,
+        activationThreshold: 0
+      }
+    });
+
+    const first = extractor.update();
+    analyser.setTimeData(loud);
+    analyser.setFrequencyData(richFreq);
+    const second = extractor.update();
+    const rawLoudRms = computeRmsFromBytes(Uint8Array.from(loud));
+
+    expect(first.rms).toBeCloseTo(0, 5);
+    expect(second.rms).toBeGreaterThan(first.rms);
+    expect(second.rms).toBeLessThan(rawLoudRms);
+    expect(second.energy).toBeLessThan(1);
+    expect(second.bands[0]).toBeGreaterThan(0);
+    expect(second.bands[0]).toBeLessThan(1);
   });
 
   test("exposes fast activity gating so silence settles quickly", () => {

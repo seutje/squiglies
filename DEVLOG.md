@@ -129,3 +129,6 @@ an `npm test` to confirm everything still passes.
 2025-11-15 - Symmetric drive mapping
 - Remapped the AudioDrivenRig drive helper so normalized 0/1 feature values now interpolate between each mapping's min/max, letting torque-driven joints swing both directions instead of staying positive.
 - Added a dedicated driveMapping helper plus Jest coverage for the 0→min / 1→max behavior, then ran `npm test` to confirm all suites continue to pass.
+2025-11-16 - Smoothed analyser features
+- Added configurable per-feature smoothing to `AudioFeatureExtractor`, zeroing silent frames before/after smoothing and basing activation gating on instantaneous RMS so the rig/UI get calmer data without delaying silence detection.
+- Extended the extractor's Jest coverage to lock in the smoothing controls and updated gating behavior, then ran `npm test -- AudioFeatureExtractor` to verify the suite.
