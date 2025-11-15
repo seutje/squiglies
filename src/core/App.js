@@ -30,6 +30,7 @@ export class App {
     this.cameraController = null;
     this.physicsWorld = null;
     this.audioDrivenRig = null;
+    this.rigs = [];
     this.trackRegistry = null;
     this.audioManager = null;
     this.audioFeatureExtractor = null;
@@ -74,11 +75,7 @@ export class App {
     });
     await this.physicsWorld.init();
 
-    this.audioDrivenRig = new AudioDrivenRig({
-      physicsWorld: this.physicsWorld,
-      scene: this.sceneManager.scene
-    });
-    this.audioDrivenRig.init();
+    this._addRigInstance({ positionOffset: [0, 0, 0] });
 
     await this._initAudioLayer();
     this.performanceMonitor = new PerformanceMonitor();
@@ -129,12 +126,14 @@ export class App {
 
     const activePreset = this.presetManager?.getCurrentPreset() ?? null;
     const rigFrame = this._audioPlaybackActive ? featureFrame : null;
-    this.audioDrivenRig?.update(rigFrame, deltaSeconds, activePreset);
+    this.rigs.forEach((rig) => {
+      rig.update(rigFrame, deltaSeconds, activePreset);
+    });
     if (this._audioPlaybackActive) {
       this.physicsWorld?.step(deltaSeconds);
     }
     this._respawnRigIfNeeded();
-    this.audioDrivenRig?.syncVisuals();
+    this.rigs.forEach((rig) => rig.syncVisuals());
     this.sceneManager?.update(deltaSeconds);
     this.cameraController?.update(deltaSeconds);
     this.sceneManager?.render(this.cameraController?.camera);
@@ -186,7 +185,8 @@ export class App {
       rootElement: trackRoot,
       audioManager: this.audioManager,
       presetManager: this.presetManager,
-      trackRegistry: this.trackRegistry
+      trackRegistry: this.trackRegistry,
+      onAddRig: () => this.addRigClone()
     });
     this.uiController.init();
 
@@ -232,6 +232,46 @@ export class App {
     while (this.visualizerContainer.firstChild) {
       this.visualizerContainer.removeChild(this.visualizerContainer.firstChild);
     }
+  }
+
+  addRigClone() {
+    if (!this.physicsWorld || !this.sceneManager) {
+      return null;
+    }
+    const offset = this._calculateRigOffset(this.rigs.length);
+    return this._addRigInstance({ positionOffset: offset });
+  }
+
+  _addRigInstance({ positionOffset = [0, 0, 0] } = {}) {
+    if (!this.physicsWorld || !this.sceneManager) {
+      return null;
+    }
+    const rig = new AudioDrivenRig({
+      physicsWorld: this.physicsWorld,
+      scene: this.sceneManager.scene,
+      positionOffset
+    });
+    rig.init();
+    this.rigs.push(rig);
+    if (!this.audioDrivenRig) {
+      this.audioDrivenRig = rig;
+    }
+    const currentPreset = this.presetManager?.getCurrentPreset() ?? null;
+    if (currentPreset) {
+      rig.applyPhysicsTuning(currentPreset.physics ?? {});
+    }
+    rig.setPlaybackActive(this._audioPlaybackActive);
+    return rig;
+  }
+
+  _calculateRigOffset(existingCount) {
+    if (!Number.isFinite(existingCount) || existingCount <= 0) {
+      return [0, 0, 0];
+    }
+    const spacing = 1.8;
+    const pairIndex = Math.ceil(existingCount / 2);
+    const direction = existingCount % 2 === 1 ? 1 : -1;
+    return [pairIndex * spacing * direction, 0, 0];
   }
 
   onAudioFeatureFrame(listener) {
@@ -282,7 +322,7 @@ export class App {
   }
 
   _handleTrackChanged(track) {
-    this.audioDrivenRig?.resetPose();
+    this.rigs.forEach((rig) => rig.resetPose());
     const trackId = typeof track === "string" ? track : track?.id ?? null;
     if (this.presetManager) {
       this.presetManager.setActiveTrack(trackId);
@@ -293,7 +333,7 @@ export class App {
     const normalized = typeof state === "string" ? state.toLowerCase() : "";
     const isPlaying = normalized === "playing";
     this._audioPlaybackActive = isPlaying;
-    this.audioDrivenRig?.setPlaybackActive(isPlaying);
+    this.rigs.forEach((rig) => rig.setPlaybackActive(isPlaying));
     if (!isPlaying) {
       this._latestFeatureFrame = null;
       this._featureAccumulator = 0;
@@ -306,17 +346,19 @@ export class App {
     if (Array.isArray(physics.gravity)) {
       this.physicsWorld?.setGravity(physics.gravity);
     }
-    this.audioDrivenRig?.applyPhysicsTuning(physics);
+    this.rigs.forEach((rig) => rig.applyPhysicsTuning(physics));
     this.sceneManager?.applyRenderingSettings(preset.rendering ?? {});
   }
 
   _respawnRigIfNeeded() {
-    if (!this.audioDrivenRig || !this.physicsWorld) {
+    if (!this.physicsWorld || !this.rigs.length) {
       return;
     }
-    if (this.audioDrivenRig.hasFallenBelowY(this._rigRespawnThreshold)) {
-      this.audioDrivenRig.resetPose();
-    }
+    this.rigs.forEach((rig) => {
+      if (rig.hasFallenBelowY(this._rigRespawnThreshold)) {
+        rig.resetPose();
+      }
+    });
   }
 
   _trackPerformance(deltaSeconds, timestamp) {

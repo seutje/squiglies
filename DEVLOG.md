@@ -117,3 +117,6 @@ an `npm test` to confirm everything still passes.
 2025-11-16 - Curated per-track presets
 - Regenerated every bundled track preset from the baseline rig mapping with track-specific tweaks (physics, rendering palettes, and mapping weights/bands) so each song now feels distinct while staying within the proven schema.
 - Updated PLAN.md to mark the preset curation task complete and ran `npm test` to verify the preset + config suites continue to pass.
+2025-11-16 - Rig cloning control
+- Added an “Add rig” button to the lil-gui Presets folder that calls back into App so users can duplicate the current rig configuration right from the preset controls.
+- Updated App/AudioDrivenRig to support multiple simultaneously simulated rigs with per-instance offsets, then re-ran `npm test` to confirm all suites continue to pass.

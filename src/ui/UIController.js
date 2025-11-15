@@ -19,11 +19,12 @@ const GUI_DEFAULTS = {
 };
 
 export class UIController {
-  constructor({ rootElement, audioManager, presetManager, trackRegistry }) {
+  constructor({ rootElement, audioManager, presetManager, trackRegistry, onAddRig = null }) {
     this.rootElement = rootElement;
     this.audioManager = audioManager;
     this.presetManager = presetManager;
     this.trackRegistry = trackRegistry;
+    this.onAddRig = typeof onAddRig === "function" ? onAddRig : null;
 
     this.elements = {};
     this.gui = null;
@@ -79,7 +80,8 @@ export class UIController {
       onGuiExport: () => this._handleExportPreset(),
       onGuiDownload: () => this._handleDownloadPreset(),
       onGuiImportText: () => this._handleImportPresetFromText(),
-      onGuiFileChange: (event) => this._handlePresetFileInput(event)
+      onGuiFileChange: (event) => this._handlePresetFileInput(event),
+      onGuiAddRig: () => this._handleAddRigClick()
     };
   }
 
@@ -225,6 +227,16 @@ export class UIController {
     });
   }
 
+  _handleAddRigClick() {
+    if (this._isGuiUpdating) return;
+    if (this.onAddRig) {
+      this.onAddRig();
+      this._setStatus("Added rig clone", STATUS_VARIANTS.SUCCESS);
+    } else {
+      this._setStatus("Rig cloning unavailable", STATUS_VARIANTS.WARNING);
+    }
+  }
+
   _createGuiOverlay() {
     if (this.gui) return;
     const host = document.getElementById("visualizer-container") ?? document.body;
@@ -255,6 +267,10 @@ export class UIController {
       .name("Status")
       .listen();
     this.guiControllers.status.disable?.();
+    const presetActions = {
+      addRig: () => this._handlers.onGuiAddRig()
+    };
+    presetFolder.add(presetActions, "addRig").name("Add rig");
     presetFolder.open();
 
     const physicsFolder = this.gui.addFolder("Physics");

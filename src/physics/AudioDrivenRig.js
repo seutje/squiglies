@@ -11,10 +11,13 @@ import { DEFAULT_RESPAWN_THRESHOLD, hasBodiesBelowThreshold } from "./rigBounds.
 import { ImpulseZeroCenter } from "./ImpulseZeroCenter.js";
 
 export class AudioDrivenRig {
-  constructor({ physicsWorld, scene, maxBodies = RIG_BODY_LIMIT } = {}) {
+  constructor({ physicsWorld, scene, maxBodies = RIG_BODY_LIMIT, positionOffset = [0, 0, 0] } = {}) {
     this.physicsWorld = physicsWorld;
     this.scene = scene;
     this.maxBodies = maxBodies;
+    this.positionOffset = Array.isArray(positionOffset)
+      ? positionOffset.slice(0, 3)
+      : [0, 0, 0];
 
     this.RAPIER = null;
     this.world = null;
@@ -210,17 +213,18 @@ export class AudioDrivenRig {
 
   _buildBodies() {
     RIG_DEFINITION.bodies.forEach((bodyDef) => {
-      const body = this._createRigidBody(bodyDef);
+      const translation = this._getOffsetTranslation(bodyDef.translation);
+      const body = this._createRigidBody(bodyDef, translation);
       this.bodiesByName.set(bodyDef.name, body.handle);
       this.initialStates.set(body.handle, {
-        translation: bodyDef.translation.slice(),
+        translation: translation.slice(),
         rotation: this._getInitialRotation(bodyDef)
       });
       this._bodyConfigs.set(bodyDef.name, {
         linearDamping: bodyDef.linearDamping ?? 0.5,
         angularDamping: bodyDef.angularDamping ?? 0.5
       });
-      const mesh = this._createMesh(bodyDef);
+      const mesh = this._createMesh(bodyDef, translation);
       this.meshesByHandle.set(body.handle, mesh);
       this._meshGroup.add(mesh);
     });
@@ -236,8 +240,8 @@ export class AudioDrivenRig {
     });
   }
 
-  _createRigidBody(def) {
-    const bodyDesc = this.RAPIER.RigidBodyDesc.dynamic().setTranslation(...def.translation);
+  _createRigidBody(def, translation) {
+    const bodyDesc = this.RAPIER.RigidBodyDesc.dynamic().setTranslation(...translation);
     bodyDesc.setLinearDamping(def.linearDamping ?? 0.5);
     bodyDesc.setAngularDamping(def.angularDamping ?? 0.5);
 
@@ -273,7 +277,7 @@ export class AudioDrivenRig {
     return this.RAPIER.ColliderDesc.cuboid(hx, hy, hz);
   }
 
-  _createMesh(def) {
+  _createMesh(def, translation) {
     let geometry;
     if (def.shape === "capsule" && THREE.CapsuleGeometry) {
       const radius = def.size?.radius ?? 0.12;
@@ -302,8 +306,14 @@ export class AudioDrivenRig {
     const mesh = new THREE.Mesh(geometry, material);
     mesh.castShadow = true;
     mesh.receiveShadow = true;
-    mesh.position.set(...def.translation);
+    mesh.position.set(...translation);
     return mesh;
+  }
+
+  _getOffsetTranslation(sourceTranslation = [0, 0, 0]) {
+    const [sx = 0, sy = 0, sz = 0] = Array.isArray(sourceTranslation) ? sourceTranslation : [0, 0, 0];
+    const [ox = 0, oy = 0, oz = 0] = this.positionOffset ?? [0, 0, 0];
+    return [sx + ox, sy + oy, sz + oz];
   }
 
   _createJoint(def) {
