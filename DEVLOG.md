@@ -126,3 +126,6 @@ an `npm test` to confirm everything still passes.
 2025-11-16 - Automatic track sequencing
 - Added a TrackRegistry helper plus AudioManager.next-track workflow so playback automatically advances to the next bundled song and loops after the last entry while skipping user-loaded files.
 - Expanded the AudioManager and TrackRegistry Jest suites to lock in the sequencing behavior, then re-ran `npm test` to confirm everything still passes.
+2025-11-16 - Rebalanced rig alignment
+- Repositioned every body in `rigDefinition` so capsule extents actually meet at their neighbors, updated the joint anchors to the real endcaps, and lowered the tail stack so the rig no longer spawns with compressed segments that immediately snap apart under physics.
+- Re-ran `npm test` to make sure the config helpers and mapping schema still pass their suites after the rig geometry shift.
