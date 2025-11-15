@@ -14,7 +14,7 @@ const DEFAULT_SILENCE_GATE = {
   ceilingRms: 0.1,
   attack: 0.6,
   release: 0.12,
-  activationThreshold: 0.12
+  activationThreshold: 0.012
 };
 
 export class AudioFeatureExtractor {
