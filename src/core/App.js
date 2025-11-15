@@ -75,7 +75,7 @@ export class App {
     });
     await this.physicsWorld.init();
 
-    this._addRigInstance({ positionOffset: [0, 0, 0] });
+    this._addRigInstance({ positionOffset: [0, 0.5, 0] });
 
     await this._initAudioLayer();
     this.performanceMonitor = new PerformanceMonitor();
