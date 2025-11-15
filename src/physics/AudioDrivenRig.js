@@ -10,14 +10,31 @@ import {
 import { DEFAULT_RESPAWN_THRESHOLD, hasBodiesBelowThreshold } from "./rigBounds.js";
 import { ImpulseZeroCenter } from "./ImpulseZeroCenter.js";
 
+const DEFAULT_SIDEWAYS_ORIENTATION = {
+  axis: [0, 0, 1],
+  angle: -Math.PI / 2
+};
+const DEFAULT_RIG_ELEVATION = 0.1;
+
 export class AudioDrivenRig {
-  constructor({ physicsWorld, scene, maxBodies = RIG_BODY_LIMIT, positionOffset = [0, 0, 0] } = {}) {
+  constructor({
+    physicsWorld,
+    scene,
+    maxBodies = RIG_BODY_LIMIT,
+    positionOffset = [0, 0, 0],
+    rigOrientation = DEFAULT_SIDEWAYS_ORIENTATION,
+    rigElevation = DEFAULT_RIG_ELEVATION
+  } = {}) {
     this.physicsWorld = physicsWorld;
     this.scene = scene;
     this.maxBodies = maxBodies;
     this.positionOffset = Array.isArray(positionOffset)
       ? positionOffset.slice(0, 3)
       : [0, 0, 0];
+    const [ox = 0, oy = 0, oz = 0] = this.positionOffset ?? [0, 0, 0];
+    this._positionOffsetVector = new THREE.Vector3(ox, oy, oz);
+    this._rigOrientationQuaternion = this._buildRigOrientationQuaternion(rigOrientation);
+    this._rigElevation = Number.isFinite(rigElevation) ? rigElevation : 0;
 
     this.RAPIER = null;
     this.world = null;
@@ -312,8 +329,13 @@ export class AudioDrivenRig {
 
   _getOffsetTranslation(sourceTranslation = [0, 0, 0]) {
     const [sx = 0, sy = 0, sz = 0] = Array.isArray(sourceTranslation) ? sourceTranslation : [0, 0, 0];
-    const [ox = 0, oy = 0, oz = 0] = this.positionOffset ?? [0, 0, 0];
-    return [sx + ox, sy + oy, sz + oz];
+    const translation = new THREE.Vector3(sx, sy, sz);
+    translation.applyQuaternion(this._rigOrientationQuaternion);
+    if (Number.isFinite(this._rigElevation)) {
+      translation.y += this._rigElevation;
+    }
+    translation.add(this._positionOffsetVector);
+    return [translation.x, translation.y, translation.z];
   }
 
   _createJoint(def) {
@@ -507,18 +529,37 @@ export class AudioDrivenRig {
     return [x / length, y / length, z / length];
   }
 
-  _getInitialRotation(def) {
-    if (!def.initialRotation) {
-      return { x: 0, y: 0, z: 0, w: 1 };
+  _buildRigOrientationQuaternion(config) {
+    const quaternion = new THREE.Quaternion();
+    if (!config) {
+      return quaternion;
     }
-    const axis = this._normalizeAxis(def.initialRotation.axis);
-    const halfAngle = (def.initialRotation.angle ?? 0) * 0.5;
-    const sinHalf = Math.sin(halfAngle);
+    const axis = this._normalizeAxis(config.axis);
+    const angle = Number.isFinite(config.angle) ? config.angle : 0;
+    if (Math.abs(angle) <= 1e-6) {
+      return quaternion;
+    }
+    const axisVector = new THREE.Vector3(axis[0], axis[1], axis[2]);
+    quaternion.setFromAxisAngle(axisVector, angle);
+    return quaternion;
+  }
+
+  _getInitialRotation(def) {
+    const quaternion = new THREE.Quaternion();
+    if (def.initialRotation) {
+      const axis = this._normalizeAxis(def.initialRotation.axis);
+      const angle = Number.isFinite(def.initialRotation.angle) ? def.initialRotation.angle : 0;
+      if (Math.abs(angle) > 0) {
+        const axisVector = new THREE.Vector3(axis[0], axis[1], axis[2]);
+        quaternion.setFromAxisAngle(axisVector, angle);
+      }
+    }
+    quaternion.premultiply(this._rigOrientationQuaternion);
     return {
-      x: axis[0] * sinHalf,
-      y: axis[1] * sinHalf,
-      z: axis[2] * sinHalf,
-      w: Math.cos(halfAngle)
+      x: quaternion.x,
+      y: quaternion.y,
+      z: quaternion.z,
+      w: quaternion.w
     };
   }
 

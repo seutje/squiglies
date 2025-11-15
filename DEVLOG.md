@@ -129,3 +129,6 @@ an `npm test` to confirm everything still passes.
 2025-11-16 - Rebalanced rig alignment
 - Repositioned every body in `rigDefinition` so capsule extents actually meet at their neighbors, updated the joint anchors to the real endcaps, and lowered the tail stack so the rig no longer spawns with compressed segments that immediately snap apart under physics.
 - Re-ran `npm test` to make sure the config helpers and mapping schema still pass their suites after the rig geometry shift.
+2025-11-15 - Sideways rig drop
+- Added a global rig-orientation quaternion and spawn elevation inside `AudioDrivenRig` so every body is rotated 90° onto its side, translated into that sideways pose, and lifted slightly before the simulation runs.
+- Updated the translation/rotation helpers to apply the shared orientation plus offset, then executed `npm test` to confirm the existing suites still pass with the new spawn logic.
