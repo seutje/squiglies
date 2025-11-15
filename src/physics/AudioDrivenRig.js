@@ -212,6 +212,36 @@ export class AudioDrivenRig {
     }
   }
 
+  isPlaybackActive() {
+    return this._playbackActive;
+  }
+
+  simulateSilentPlayback(durationSeconds = 1, { preset = null, bandCount = 0 } = {}) {
+    if (!this.physicsWorld?.step || !this.world) {
+      return;
+    }
+    if (!Number.isFinite(durationSeconds) || durationSeconds <= 0) {
+      return;
+    }
+    const fixedStep = this.physicsWorld.fixedTimeStep ?? 1 / 60;
+    if (!Number.isFinite(fixedStep) || fixedStep <= 0) {
+      return;
+    }
+    const steps = Math.max(1, Math.ceil(durationSeconds / fixedStep));
+    const silentFrame = this._createSilentFeatureFrame(bandCount);
+    const previousPlaybackState = this._playbackActive;
+    this._playbackActive = true;
+    const activePreset = preset ?? this._currentPreset ?? BASELINE_RIG_PRESET;
+    for (let i = 0; i < steps; i += 1) {
+      this.update(silentFrame, fixedStep, activePreset);
+      this.physicsWorld.step(fixedStep);
+    }
+    this._playbackActive = previousPlaybackState;
+    if (!previousPlaybackState) {
+      this._bleedResidualMotion(true);
+    }
+  }
+
   _buildBodies() {
     RIG_DEFINITION.bodies.forEach((bodyDef) => {
       const translation = this._getOffsetTranslation(bodyDef.translation);
@@ -646,5 +676,22 @@ export class AudioDrivenRig {
       body.setLinvel(new this.RAPIER.Vector3(0, 0, 0), true);
       body.setAngvel(new this.RAPIER.Vector3(0, 0, 0), true);
     });
+  }
+
+  _createSilentFeatureFrame(bandCount = 0) {
+    const count = Number.isFinite(bandCount) && bandCount > 0 ? Math.floor(bandCount) : 0;
+    const bands = count > 0 ? new Array(count).fill(0) : [];
+    return {
+      rms: 0,
+      energy: 0,
+      peak: 0,
+      centroid: 0,
+      centroidHz: 0,
+      rolloff: 0,
+      rolloffHz: 0,
+      activity: 0,
+      isActive: true,
+      bands
+    };
   }
 }

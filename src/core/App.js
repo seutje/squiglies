@@ -256,11 +256,7 @@ export class App {
     if (!this.audioDrivenRig) {
       this.audioDrivenRig = rig;
     }
-    const currentPreset = this.presetManager?.getCurrentPreset() ?? null;
-    if (currentPreset) {
-      rig.applyPhysicsTuning(currentPreset.physics ?? {});
-    }
-    rig.setPlaybackActive(this._audioPlaybackActive);
+    this._prepareRigAfterSpawn(rig);
     return rig;
   }
 
@@ -357,8 +353,35 @@ export class App {
     this.rigs.forEach((rig) => {
       if (rig.hasFallenBelowY(this._rigRespawnThreshold)) {
         rig.resetPose();
+        this._simulateSilentRigSettle(rig);
       }
     });
+  }
+
+  _prepareRigAfterSpawn(rig) {
+    if (!rig) {
+      return;
+    }
+    const currentPreset = this.presetManager?.getCurrentPreset() ?? null;
+    if (currentPreset) {
+      rig.applyPhysicsTuning(currentPreset.physics ?? {});
+    }
+    rig.setPlaybackActive(this._audioPlaybackActive);
+    this._simulateSilentRigSettle(rig);
+  }
+
+  _simulateSilentRigSettle(rig) {
+    if (!rig?.simulateSilentPlayback) {
+      return;
+    }
+    const bandCount =
+      this.audioFeatureExtractor?.bandDefinitions?.length ?? this._latestFeatureFrame?.bands?.length ?? 8;
+    const preset = this.presetManager?.getCurrentPreset() ?? null;
+    try {
+      rig.simulateSilentPlayback(1, { preset, bandCount });
+    } catch (error) {
+      console.warn("Rig silent settle failed", error);
+    }
   }
 
   _trackPerformance(deltaSeconds, timestamp) {

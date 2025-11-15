@@ -132,3 +132,10 @@ an `npm test` to confirm everything still passes.
 2025-11-16 - Smoothed analyser features
 - Added configurable per-feature smoothing to `AudioFeatureExtractor`, zeroing silent frames before/after smoothing and basing activation gating on instantaneous RMS so the rig/UI get calmer data without delaying silence detection.
 - Extended the extractor's Jest coverage to lock in the smoothing controls and updated gating behavior, then ran `npm test -- AudioFeatureExtractor` to verify the suite.
+2025-11-17 - Silent rig settle buffer
+- When a rig respawns after falling below the floor, App now asks the rig to simulate one second of silent playback off-screen so Rapier gets a chance to stabilize joints before the user sees the model.
+- Added an explicit `simulateSilentPlayback` helper to `AudioDrivenRig` (plus a playback state getter) that loops fixed-step physics with zeroed analyser frames, then re-ran `npm test` to confirm everything still passes.
+2025-11-17 - Silent settle on new rigs
+- Whenever App spawns a rig—either during startup, after a track selection, or through the “Add rig” control—it now immediately applies the active preset, syncs playback state, and pre-simulates one second of silent audio so the physics stabilize before rendering.
+2025-11-17 - Rig spawn settle (clarification)
+- Followed up the silent settle work so every newly spawned rig—initial load or Add Rig clones—immediately runs the off-screen simulation, while track changes continue reusing the warmed rigs.
